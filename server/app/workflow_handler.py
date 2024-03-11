@@ -7,20 +7,22 @@ from pathlib import Path
 from app import app
 from .utils import tes_auth
 
-def run(username, token) -> uuid.UUID:
+def run(workflow_definition_id, username, token) -> uuid.UUID:
     workflow_id = uuid.uuid4()
 
     log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{workflow_id}.txt"))
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
     log_file = open(log_file_path, "w")
 
+    workflow_folder = [d for d in os.listdir(app.config['WORKFLOW_DEFINITION_DIR']) if d.startswith(workflow_definition_id + "_")][0]
+
     subprocess.Popen(
         [
             "snakemake",
             "--sdm=conda",
             "--executor=tes",
-            "--snakefile=workflows/Snakefile",
-            "--directory=workflows",
+            f"--snakefile={app.config['WORKFLOW_DEFINITION_DIR']}/{workflow_folder}/Snakefile",
+            f"--directory={app.config['WORKFLOW_DEFINITION_DIR']}/{workflow_folder}",
             "--default-storage-provider=s3",
             f"--default-storage-prefix={app.config['DEFAULT_STORAGE_PREFIX']}",
             f"--storage-s3-endpoint-url={app.config['STORAGE_S3_ENDPOINT_URL']}",
@@ -40,6 +42,19 @@ def run(username, token) -> uuid.UUID:
     )
 
     return workflow_id
+
+def get_workflow_definitions():
+    workflows = [d for d in os.listdir(app.config['WORKFLOW_DEFINITION_DIR'])]
+    res = []
+    for workflow_dir in workflows:
+        workflow_res = {}
+        with open(f"{app.config['WORKFLOW_DEFINITION_DIR']}/{workflow_dir}/Snakefile") as f:
+            workflow_res["id"] = workflow_dir.split("_")[0]
+            workflow_name = workflow_dir[workflow_dir.find("_") + 1 :]
+            workflow_res["name"] = workflow_name.replace("_", " ").capitalize()
+            workflow_res["definition"] = f.read()
+            res.append(workflow_res)
+    return res
 
 def get_workflow_jobs_info(username, workflow_id, list_view=False):
     job_ids = get_workflow_jobs(username, workflow_id)

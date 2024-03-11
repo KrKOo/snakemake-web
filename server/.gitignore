@@ -1,5 +1,5 @@
 logs
-workflows/.snakemake
+workflows/**/.snakemake
 config.cfg
 
 # Byte-compiled / optimized / DLL files

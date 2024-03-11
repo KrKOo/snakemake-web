@@ -1,5 +1,5 @@
 from flask import Blueprint, request
-from .workflow_handler import get_workflow_jobs_info, run
+from .workflow_handler import get_workflow_jobs_info, run, get_workflow_definitions
 from .wrappers import with_user, with_access_token
 from .utils import is_valid_uuid
 
@@ -10,7 +10,8 @@ api = Blueprint("api", __name__)
 @with_user
 @with_access_token
 def run_workflow(token, username):
-    workflow_id = run(username, token)
+    workflow_definition_id = request.json.get("id")
+    workflow_id = run(workflow_definition_id, username, token)
     return {"workflow_id": workflow_id}, 200
 
 
@@ -28,3 +29,10 @@ def worflow_jobs(username, workflow_id):
         return "Workflow not found", 404
 
     return jobs_info, 200
+
+
+@api.route("/workflow_definition")
+def workflow():
+    workflow_definitions = get_workflow_definitions()
+
+    return workflow_definitions, 200
