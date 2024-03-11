@@ -1,0 +1,17 @@
+import uuid
+
+FILE = "out33.txt"
+
+rule test:
+    input: 
+        FILE 
+    output:
+        str(uuid.uuid4()) + ".txt"
+    shell:
+        "cat {input} >> {output}"
+
+rule test1:
+    output:
+        FILE
+    shell:
+        "touch {output} && echo hello > {output}"
