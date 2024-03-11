@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import api from '../utls/api';
+import api from '../utils/api';
 import {
   Box,
   Button,

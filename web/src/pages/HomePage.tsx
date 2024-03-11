@@ -1,5 +1,5 @@
 import { Button } from '@mui/material';
-import api from '../utls/api';
+import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 
 const HomePage = () => {
