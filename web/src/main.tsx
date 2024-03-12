@@ -5,6 +5,7 @@ import './index.css';
 
 import HomePage from './pages/HomePage';
 import WorkflowDetailPage from './pages/WorkflowDetailPage';
+import WorkflowsPage from './pages/WorkflowsPage';
 
 const router = createBrowserRouter([
   {
@@ -14,6 +15,10 @@ const router = createBrowserRouter([
   {
     path: '/workflow/:workflowId',
     element: <WorkflowDetailPage />,
+  },
+  {
+    path: '/workflows',
+    element: <WorkflowsPage />,
   },
 ]);
 

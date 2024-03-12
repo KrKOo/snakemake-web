@@ -10,6 +10,7 @@ import api from '../utils/api';
 import { useNavigate } from 'react-router-dom';
 import { CodeBlock, github } from 'react-code-blocks';
 import { useEffect, useState } from 'react';
+import Header from '../components/Header';
 
 interface WorkflowDefinition {
   id: string;
@@ -43,35 +44,39 @@ const HomePage = () => {
   };
 
   return (
-    <div className='container mx-auto'>
-      {workflows
-        .sort((a, b) => parseInt(a.id) - parseInt(b.id))
-        .map((workflow) => (
-          <Accordion>
-            <AccordionSummary
-              expandIcon={<ExpandMoreIcon />}
-              aria-controls='panel3-content'
-              id='panel3-header'>
-              {workflow.name}
-            </AccordionSummary>
-            <AccordionDetails>
-              <div className='font-mono text-sm'>
-                <CodeBlock
-                  text={workflow.definition}
-                  language={'python'}
-                  theme={github}
-                  showLineNumbers={true}
-                />
-              </div>
-            </AccordionDetails>
-            <AccordionActions>
-              <Button onClick={() => handleRunWorkflow(workflow.id)}>
-                Run
-              </Button>
-            </AccordionActions>
-          </Accordion>
-        ))}
-    </div>
+    <>
+      <Header />
+      <div className='container mx-auto mt-4'>
+        {workflows
+          .sort((a, b) => parseInt(a.id) - parseInt(b.id))
+          .map((workflow) => (
+            <Accordion>
+              <AccordionSummary
+                expandIcon={<ExpandMoreIcon />}
+                aria-controls='panel3-content'
+                id='panel3-header'
+                className='text-lg'>
+                {workflow.name}
+              </AccordionSummary>
+              <AccordionDetails>
+                <div className='font-mono text-sm'>
+                  <CodeBlock
+                    text={workflow.definition}
+                    language={'python'}
+                    theme={github}
+                    showLineNumbers={true}
+                  />
+                </div>
+              </AccordionDetails>
+              <AccordionActions>
+                <Button onClick={() => handleRunWorkflow(workflow.id)}>
+                  <span className='text-lg'>RUN</span>
+                </Button>
+              </AccordionActions>
+            </Accordion>
+          ))}
+      </div>
+    </>
   );
 };
 
