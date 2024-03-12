@@ -49,8 +49,8 @@ const HomePage = () => {
       <div className='container mx-auto mt-4'>
         {workflows
           .sort((a, b) => parseInt(a.id) - parseInt(b.id))
-          .map((workflow) => (
-            <Accordion>
+          .map((workflow, index) => (
+            <Accordion key={index}>
               <AccordionSummary
                 expandIcon={<ExpandMoreIcon />}
                 aria-controls='panel3-content'

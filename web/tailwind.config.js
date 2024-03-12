@@ -6,6 +6,7 @@ export default {
     colors: {
       white: '#e7e7e7',
       black: '#333',
+      highlited: '#f8f8f8',
       selected: '#aaa',
     },
   },

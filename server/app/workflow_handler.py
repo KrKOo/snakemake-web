@@ -1,4 +1,6 @@
 import os
+import re
+import time
 import uuid
 import subprocess
 import requests
@@ -10,7 +12,7 @@ from .utils import tes_auth
 def run(workflow_definition_id, username, token) -> uuid.UUID:
     workflow_id = uuid.uuid4()
 
-    log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{workflow_id}.txt"))
+    log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{int(time.time() * 1000)}_{workflow_id}.txt"))
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
     log_file = open(log_file_path, "w")
 
@@ -56,6 +58,39 @@ def get_workflow_definitions():
             res.append(workflow_res)
     return res
 
+def get_workflows(username):
+    log_dir = os.path.join(app.config["LOG_DIR"], username)
+    workflow_logs = [f for f in os.listdir(log_dir) if os.path.isfile(os.path.join(log_dir, f))]
+    workflows = []
+    for workflow_log in workflow_logs:
+        with open(os.path.join(log_dir, workflow_log), "r") as f:
+            log = f.read()
+        
+        workflow = {}
+        workflow["id"] = workflow_log.split("_")[1].split(".")[0]
+        workflow["created_at"] = int(workflow_log.split("_")[0])
+
+        if "WorkflowError" in log:
+            workflow["status"] = "Failed"
+        elif "Nothing to be done" in log:
+            workflow["status"] = "Completed (did nothing)"
+        else:
+            progress_regex = r"^(\d*) of (\d*) steps .* done$"
+            matches = list(re.finditer(progress_regex, log, re.MULTILINE))
+            if len(matches) == 0:
+                workflow["status"] = "Unknown"
+            else:
+                job_count = int(matches[-1].group(2))
+                finished_jobs = int(matches[-1].group(1))
+
+                if job_count == finished_jobs:
+                    workflow["status"] = f"Completed ({finished_jobs}/{job_count})"
+                else:
+                    workflow["status"] = f"Running {finished_jobs}/{job_count}"
+        
+        workflows.append(workflow)
+    return workflows
+
 def get_workflow_jobs_info(username, workflow_id, list_view=False):
     job_ids = get_workflow_jobs(username, workflow_id)
     jobs_info = []
@@ -65,10 +100,13 @@ def get_workflow_jobs_info(username, workflow_id, list_view=False):
 
 def get_workflow_jobs(username, workflow_id) -> list[str]:
     log_dir = os.path.join(app.config["LOG_DIR"], username)
-    log_file = os.path.join(log_dir, f"{workflow_id}.txt")
-    
-    if not os.path.exists(log_file):
+
+    files = [f for f in os.listdir(log_dir) if workflow_id in f]
+
+    if len(files) == 0:
         raise FileNotFoundError("Workflow not found") 
+    
+    log_file = os.path.join(log_dir, files[0])
 
     with open(log_file, 'r') as f:
         log = f.read()

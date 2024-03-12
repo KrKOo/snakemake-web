@@ -20,7 +20,7 @@ const Header = (props: HeaderProps) => {
 
   return (
     <nav className={`w-full bg-white ${props.className}`}>
-      <ul className='flex flex-row ml-36'>
+      <ul className='flex flex-row justify-center'>
         {Object.keys(routeNames).map((route, i) => (
           <HeaderItem
             key={i}

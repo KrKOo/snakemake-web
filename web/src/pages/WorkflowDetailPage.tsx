@@ -15,6 +15,7 @@ import {
 import Paper from '@mui/material/Paper';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import Header from '../components/Header';
 
 interface JobInfo {
   id: string;
@@ -38,58 +39,69 @@ const WorkflowDetailPage = () => {
         })
         .catch(() => {
           console.error('Failed to get workflow');
-          navigate('/');
+          navigate('/workflows');
         });
     })();
   }, [workflowId, navigate]);
 
   return (
     <>
-      <div className='container mx-auto'>
-        <h1 className='text-4xl font-bold'>{workflowId}</h1>
-
-        <TableContainer component={Paper}>
-          <Table sx={{ minWidth: 650 }} aria-label='simple table'>
-            <TableHead>
-              <TableRow>
-                <TableCell></TableCell>
-                <TableCell align='center'>ID</TableCell>
-                <TableCell align='center'>Name</TableCell>
-                <TableCell align='center'>State</TableCell>
-                <TableCell align='center'>Created at</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {jobs.map((job, index) => {
-                return <Row key={job.id} id={index} row={job} />;
-              })}
-            </TableBody>
-          </Table>
-        </TableContainer>
+      <Header />
+      <div className='container mx-auto mt-4'>
+        <div className='mb-4 text-3xl text-black'>
+          Workflow ID: {workflowId}
+        </div>
+        {jobs.length !== 0 ? (
+          <TableContainer component={Paper}>
+            <Table sx={{ minWidth: 650 }} aria-label='simple table'>
+              <TableHead>
+                <TableRow className='bg-white'>
+                  <TableCell></TableCell>
+                  <TableCell align='center'>
+                    <span className='font-bold text-lg'>ID</span>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <span className='font-bold text-lg'>State</span>
+                  </TableCell>
+                  <TableCell align='center'>
+                    <span className='font-bold text-lg'>Created at</span>
+                  </TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {jobs.map((job) => {
+                  return <Row key={job.id} job={job} />;
+                })}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        ) : (
+          <div className='text-center text-3xl mt-10 text-black'>
+            This workflow did not run any jobs yet
+          </div>
+        )}
       </div>
     </>
   );
 };
 
-function Row(props: { id: number; row: JobInfo }) {
-  const { id, row } = props;
+function Row(props: { job: JobInfo }) {
+  const { job } = props;
   const [open, setOpen] = useState(false);
 
   return (
     <>
-      <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+      <TableRow
+        sx={{ '& > *': { borderBottom: 'unset' } }}
+        onClick={() => setOpen(!open)}>
         <TableCell>
-          <IconButton
-            aria-label='expand row'
-            size='small'
-            onClick={() => setOpen(!open)}>
+          <IconButton aria-label='expand row' size='small'>
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
           </IconButton>
         </TableCell>
-        <TableCell align='center'>{id}</TableCell>
-        <TableCell align='center'>{row.id}</TableCell>
-        <TableCell align='center'>{row.state}</TableCell>
-        <TableCell align='center'>{row.creationTime}</TableCell>
+        <TableCell align='center'>{job.id}</TableCell>
+        <TableCell align='center'>{job.state}</TableCell>
+        <TableCell align='center'>{job.creationTime}</TableCell>
       </TableRow>
       <TableRow className='p-0 m-0'>
         <TableCell
@@ -101,7 +113,7 @@ function Row(props: { id: number; row: JobInfo }) {
           <Collapse in={open} timeout='auto' unmountOnExit>
             <div className='max-h-96 overflow-y-scroll px-2'>
               <Box sx={{ margin: 1 }} className='text-white'>
-                {row.logs.split('\n').map((i, key) => (
+                {job.logs.split('\n').map((i, key) => (
                   <pre key={key} className='whitespace-pre-line'>
                     {i}
                   </pre>
