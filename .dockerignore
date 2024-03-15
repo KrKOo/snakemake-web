@@ -1,0 +1,11 @@
+chart
+
+Dockerfile
+.gitignore
+
+web/node_modules
+web/dist
+
+server/config.cfg
+server/logs
+server/workflows/**/.snakefile

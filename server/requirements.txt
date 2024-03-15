@@ -1,1 +1,5 @@
+snakemake-storage-plugin-s3==0.2.10
 Flask==3.0.2
+uvicorn==0.28.0
+snakemake==8.6.0
+git+https://github.com/CERIT-SC/snakemake-executor-plugin-auth-tes

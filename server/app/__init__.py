@@ -1,7 +1,7 @@
 import os
 import secrets
 import tomllib
-from flask import Flask
+from flask import Flask, send_from_directory
 
 app = Flask(__name__)
 
@@ -18,7 +18,14 @@ else:
 
 from app import routes
 
-if os.environ.get("FLASK_ENV") == "production":
-    app.register_blueprint(routes.api, url_prefix="/")
-elif os.environ.get("FLASK_ENV") == "development":
-    app.register_blueprint(routes.api, url_prefix="/api")
+app.register_blueprint(routes.api, url_prefix="/api")
+
+
+@app.route("/", defaults={"path": ""})
+@app.route("/<path:path>")
+def serve(path):
+    web_dir = app.config.get("WEB_DIR")
+    if path != "" and os.path.exists(os.path.join(web_dir, path)):
+        return send_from_directory(web_dir, path)
+
+    return send_from_directory(web_dir, "index.html")
