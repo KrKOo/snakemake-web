@@ -2,48 +2,25 @@ import os
 import re
 import time
 import uuid
-import subprocess
 import requests
 from pathlib import Path
 
 from app import app
 from .utils import tes_auth
 
+from .tasks import run_workflow
+
 def run(workflow_definition_id, username, token) -> uuid.UUID:
     workflow_id = uuid.uuid4()
 
     log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{int(time.time() * 1000)}_{workflow_id}.txt"))
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
-    log_file = open(log_file_path, "w")
 
     workflow_folder = [d for d in os.listdir(app.config['WORKFLOW_DEFINITION_DIR']) if d.startswith(workflow_definition_id + "_")][0]
 
-    subprocess.Popen(
-        [
-            "snakemake",
-            "--sdm=conda",
-            "--executor=tes",
-            f"--snakefile={app.config['WORKFLOW_DEFINITION_DIR']}/{workflow_folder}/Snakefile",
-            f"--directory={app.config['WORKFLOW_DEFINITION_DIR']}/{workflow_folder}",
-            "--default-storage-provider=s3",
-            f"--default-storage-prefix={app.config['DEFAULT_STORAGE_PREFIX']}",
-            f"--storage-s3-endpoint-url={app.config['STORAGE_S3_ENDPOINT_URL']}",
-            f"--storage-s3-access-key={app.config['STORAGE_S3_ACCESS_KEY']}",
-            f"--storage-s3-secret-key={app.config['STORAGE_S3_SECRET_KEY']}",
-            f"--tes-url={app.config['TES_URL']}",
-            f"--tes-oidc-client-id={app.config['TES_OIDC_CLIENT_ID']}",
-            f"--tes-oidc-client-secret={app.config['TES_OIDC_CLIENT_SECRET']}",
-            f"--tes-oidc-url={app.config['TES_OIDC_URL']}",
-            f"--tes-oidc-access-token={token}",
-            f"--tes-oidc-audience={app.config['TES_OIDC_AUDIENCE']}",
-            f"--container-image={app.config['SNAKEMAKE_CONTAINER_IMAGE']}",
-            f"--jobs={app.config['SNAKEMAKE_JOBS']}",
-        ],
-        stdout=log_file,
-        stderr=log_file,
-    )
+    run_workflow.delay(log_file_path.as_posix(), workflow_folder, token)
 
-    return workflow_id
+    return workflow_id 
 
 def get_workflow_definitions():
     workflows = [d for d in os.listdir(app.config['WORKFLOW_DEFINITION_DIR'])]

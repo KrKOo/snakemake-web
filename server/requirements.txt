@@ -1,5 +1,6 @@
 snakemake-storage-plugin-s3==0.2.10
 Flask==3.0.2
 uvicorn==0.28.0
-snakemake==8.6.0
+snakemake==8.9.0
+celery==5.3.6
 git+https://github.com/CERIT-SC/snakemake-executor-plugin-auth-tes

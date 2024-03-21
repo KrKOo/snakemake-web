@@ -1,12 +1,12 @@
 import uuid
 
-FILE = "out55.txt"
+FILE = "out101"
 
 rule test:
     input: 
         FILE 
     output:
-        str(uuid.uuid4()) + ".txt"
+        FILE + "_out"
     shell:
         "cat {input} >> {output}"
 

@@ -1,6 +1,7 @@
 import os
 import secrets
 import tomllib
+from celery import Celery
 from flask import Flask, send_from_directory
 
 app = Flask(__name__)
@@ -15,6 +16,8 @@ if app.config.get("SECRET_KEY"):
 else:
     app.secret_key = secrets.token_urlsafe(16)
 
+celery = Celery(app.name, broker=app.config.get("CELERY_BROKER_URL"))
+celery.conf.update(app.config)
 
 from app import routes
 
