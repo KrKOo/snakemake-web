@@ -10,7 +10,7 @@ from .utils import tes_auth
 
 from .tasks import run_workflow
 
-def run(workflow_definition_id, username, token) -> uuid.UUID:
+def run(workflow_definition_id, input_dir, output_dir, username, token) -> uuid.UUID:
     workflow_id = uuid.uuid4()
 
     log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{int(time.time() * 1000)}_{workflow_id}.txt"))
@@ -18,7 +18,7 @@ def run(workflow_definition_id, username, token) -> uuid.UUID:
 
     workflow_folder = [d for d in os.listdir(app.config['WORKFLOW_DEFINITION_DIR']) if d.startswith(workflow_definition_id + "_")][0]
 
-    run_workflow.delay(log_file_path.as_posix(), workflow_folder, token)
+    run_workflow.delay(str(workflow_id), log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
 
     return workflow_id 
 
@@ -27,7 +27,7 @@ def get_workflow_definitions():
     res = []
     for workflow_dir in workflows:
         workflow_res = {}
-        with open(f"{app.config['WORKFLOW_DEFINITION_DIR']}/{workflow_dir}/Snakefile") as f:
+        with open(os.path.join(app.config['WORKFLOW_DEFINITION_DIR'], str(workflow_dir), "Snakefile")) as f:
             workflow_res["id"] = workflow_dir.split("_")[0]
             workflow_name = workflow_dir[workflow_dir.find("_") + 1 :]
             workflow_res["name"] = workflow_name.replace("_", " ").capitalize()

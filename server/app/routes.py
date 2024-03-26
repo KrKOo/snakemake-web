@@ -15,8 +15,12 @@ api = Blueprint("api", __name__)
 @with_user
 @with_access_token
 def run_workflow(token, username):
+    data = request.json
+    input_dir = data.get("input_dir")
+    output_dir = data.get("output_dir")
+
     workflow_definition_id = request.json.get("id")
-    workflow_id = run(workflow_definition_id, username, token)
+    workflow_id = run(workflow_definition_id, input_dir, output_dir, username, token)
     return {"workflow_id": workflow_id}, 200
 
 
