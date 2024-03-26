@@ -20,14 +20,11 @@ ENV CONDA_DIR=/opt/conda
 ENV PATH="${PATH}:${CONDA_DIR}/bin"
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-WORKDIR /app
-COPY --from=build /app/dist ./web
-RUN mkdir ./api
-
 RUN apt update && apt install -y rsync && rm -rf /var/lib/apt/lists/
 
-COPY ./server/requirements.txt ./api
-RUN pip install -r ./api/requirements.txt
+RUN mkdir -p /app/api
+COPY ./server/requirements.txt /app/api
+RUN pip install -r /app/api/requirements.txt
 
 WORKDIR /tmp
 RUN wget --progress=dot:giga -O - \
@@ -49,6 +46,7 @@ RUN useradd -m $MYUSER
 USER $MYUSER
 RUN source /opt/conda/etc/profile.d/conda.sh && conda init bash
 
+COPY --from=build /app/dist /app/web
 COPY ./server /app/api
 WORKDIR /app/api
 CMD ["uvicorn", "--host", "0.0.0.0", "--port", "80", "--interface", "wsgi" ,"run:app"]

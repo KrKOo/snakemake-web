@@ -3,4 +3,5 @@ Flask==3.0.2
 uvicorn==0.28.0
 snakemake==8.9.0
 celery==5.3.6
+mongoengine==0.28.2
 git+https://github.com/CERIT-SC/snakemake-executor-plugin-auth-tes

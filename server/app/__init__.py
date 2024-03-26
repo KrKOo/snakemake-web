@@ -2,6 +2,7 @@ import os
 import secrets
 import tomllib
 from celery import Celery
+from mongoengine import connect as mongo_connect
 from flask import Flask, send_from_directory
 
 app = Flask(__name__)
@@ -18,6 +19,8 @@ else:
 
 celery = Celery(app.name, broker=app.config.get("CELERY_BROKER_URL"))
 celery.conf.update(app.config)
+
+mongo_connect(host=app.config.get("MONGODB_URI"))
 
 from app import routes
 

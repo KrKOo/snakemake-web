@@ -16,12 +16,16 @@ interface WorkflowResponseProps {
   id: string;
   status: string;
   created_at: number;
+  total_jobs: number;
+  finished_jobs: number;
 }
 
 interface WorkflowProps {
   id: string;
   status: string;
   created_at: Date;
+  total_jobs: number;
+  finished_jobs: number;
 }
 
 const WorkflowsPage = () => {
@@ -79,7 +83,10 @@ const WorkflowsPage = () => {
                       className={'cursor-pointer hover:bg-highlited'}
                       onClick={() => navigate(`/workflow/${workflow.id}`)}>
                       <TableCell align='center'>{workflow.id}</TableCell>
-                      <TableCell align='center'>{workflow.status}</TableCell>
+                      <TableCell align='center'>
+                        {workflow.status} ({workflow.finished_jobs}/
+                        {workflow.total_jobs})
+                      </TableCell>
                       <TableCell align='center'>
                         {workflow.created_at.toISOString()}
                       </TableCell>
