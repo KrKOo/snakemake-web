@@ -19,7 +19,7 @@ import Header from '../components/Header';
 
 interface JobInfo {
   id: string;
-  creationTime: string;
+  creation_time: string;
   state: string;
   logs: string;
 }
@@ -101,7 +101,7 @@ function Row(props: { job: JobInfo }) {
         </TableCell>
         <TableCell align='center'>{job.id}</TableCell>
         <TableCell align='center'>{job.state}</TableCell>
-        <TableCell align='center'>{job.creationTime}</TableCell>
+        <TableCell align='center'>{job.creation_time}</TableCell>
       </TableRow>
       <TableRow className='p-0 m-0'>
         <TableCell
