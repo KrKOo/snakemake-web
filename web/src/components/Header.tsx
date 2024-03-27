@@ -30,6 +30,11 @@ const Header = (props: HeaderProps) => {
           </HeaderItem>
         ))}
       </ul>
+      <a
+        href='/oauth2/sign_out'
+        className='absolute right-0 top-0 p-4 hover:text-selected'>
+        Sign out
+      </a>
     </nav>
   );
 };
