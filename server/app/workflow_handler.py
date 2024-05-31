@@ -88,7 +88,7 @@ def get_job_info(job_id, list_view=False):
 
         job_info = {}
         job_info["id"] = data["id"]
-        job_info["creationTime"] = data["creation_time"]
+        job_info["created_at"] = data["creation_time"]
         job_info["state"] = data["state"]
         try:
             job_info["logs"] = data["logs"][0]["logs"][0]["stdout"]
