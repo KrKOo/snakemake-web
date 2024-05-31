@@ -111,11 +111,11 @@ function Row(props: { job: JobInfo }) {
           className='bg-black'
           colSpan={6}>
           <Collapse in={open} timeout='auto' unmountOnExit>
-            <div className='max-h-96 overflow-y-scroll px-2'>
+            <div className='max-h-96 overflow-y-scroll px-2 container'>
               <Box sx={{ margin: 1 }} className='text-white'>
-                {job.logs.split('\n').map((i, key) => (
+                {job.logs.split(/\r\n|\n|\r/).map((i, key) => (
                   <pre key={key} className='whitespace-pre-line'>
-                    {i}
+                    {i.replaceAll(/\p{C}/gu, '')}
                   </pre>
                 ))}
               </Box>
