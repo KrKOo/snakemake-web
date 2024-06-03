@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import api from '../utils/api';
 import {
@@ -13,6 +13,7 @@ import {
   TableRow,
 } from '@mui/material';
 import Paper from '@mui/material/Paper';
+import RefreshIcon from '@mui/icons-material/Refresh';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Header from '../components/Header';
@@ -30,19 +31,25 @@ const WorkflowDetailPage = () => {
 
   const [jobs, setJobs] = useState<JobInfo[]>([]);
 
+  const getJobs = useCallback(() => {
+    api
+      .get<JobInfo[]>(`/workflow/${workflowId}/jobs`)
+      .then((res) => {
+        setJobs(res.data);
+      })
+      .catch(() => {
+        console.error('Failed to get workflow');
+        navigate('/workflows');
+      });
+  }, [navigate, workflowId]);
+
   useEffect(() => {
-    (async () => {
-      api
-        .get<JobInfo[]>(`/workflow/${workflowId}/jobs`)
-        .then((res) => {
-          setJobs(res.data);
-        })
-        .catch(() => {
-          console.error('Failed to get workflow');
-          navigate('/workflows');
-        });
-    })();
-  }, [workflowId, navigate]);
+    getJobs();
+  }, [getJobs]);
+
+  const handleRefresh = () => {
+    getJobs();
+  };
 
   return (
     <>
@@ -51,6 +58,13 @@ const WorkflowDetailPage = () => {
         <div className='mb-4 text-3xl text-black'>
           Workflow ID: {workflowId}
         </div>
+        <IconButton
+          color='primary'
+          size='large'
+          className='float-right'
+          onClick={handleRefresh}>
+          <RefreshIcon fontSize='inherit' />
+        </IconButton>
         {jobs.length !== 0 ? (
           <TableContainer component={Paper}>
             <Table sx={{ minWidth: 650 }} aria-label='simple table'>
