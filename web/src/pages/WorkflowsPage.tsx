@@ -12,6 +12,13 @@ import {
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
+const WorkflowStateToColor: { [state: string]: string } = {
+  unknown: 'bg-gray-300',
+  running: 'bg-blue-300',
+  finished: 'bg-green-300',
+  failed: 'bg-red-300',
+};
+
 interface WorkflowResponseProps {
   id: string;
   status: string;
@@ -80,7 +87,9 @@ const WorkflowsPage = () => {
                   .map((workflow) => (
                     <TableRow
                       key={workflow.id}
-                      className={'cursor-pointer hover:bg-highlited'}
+                      className={`cursor-pointer hover:brightness-90 ${
+                        WorkflowStateToColor[workflow.status.toLowerCase()]
+                      }`}
                       onClick={() => navigate(`/workflow/${workflow.id}`)}>
                       <TableCell align='center'>{workflow.id}</TableCell>
                       <TableCell align='center'>

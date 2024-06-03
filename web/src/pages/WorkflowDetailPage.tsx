@@ -18,6 +18,18 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Header from '../components/Header';
 
+const JobStateToColor: { [state: string]: string } = {
+  unknown: 'bg-gray-300',
+  queued: 'bg-gray-300',
+  initializing: 'bg-blue-300',
+  running: 'bg-blue-300',
+  paused: 'bg-yellow-300',
+  complete: 'bg-green-300',
+  executor_error: 'bg-red-300',
+  system_error: 'bg-red-300',
+  canceled: 'bg-orange-300',
+};
+
 interface JobInfo {
   id: string;
   created_at: string;
@@ -103,11 +115,15 @@ function Row(props: { job: JobInfo }) {
   const { job } = props;
   const [open, setOpen] = useState(false);
 
+  console.log(JobStateToColor[job.state.toLowerCase()]);
   return (
     <>
       <TableRow
         sx={{ '& > *': { borderBottom: 'unset' } }}
-        onClick={() => setOpen(!open)}>
+        onClick={() => setOpen(!open)}
+        className={`hover:brightness-90 ${
+          JobStateToColor[job.state.toLowerCase()]
+        }`}>
         <TableCell>
           <IconButton aria-label='expand row' size='small'>
             {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
@@ -124,7 +140,7 @@ function Row(props: { job: JobInfo }) {
           }}
           className='bg-black'
           colSpan={6}>
-          <Collapse in={open} timeout='auto' unmountOnExit>
+          <Collapse in={open} timeout='auto'>
             <div className='max-h-96 overflow-y-scroll px-2 container'>
               <Box sx={{ margin: 1 }} className='text-white'>
                 {job.logs.split(/\r\n|\n|\r/).map((i, key) => (
