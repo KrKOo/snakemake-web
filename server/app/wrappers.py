@@ -1,5 +1,6 @@
 from flask import request
 from functools import wraps
+from .utils import pull_workflow_definitions
 
 
 def with_user(f):
@@ -33,5 +34,14 @@ def with_access_token(f):
             }, 401
 
         return f(token, *args, **kwargs)
+
+    return decorated
+
+
+def with_updated_workflow_definitions(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        pull_workflow_definitions()
+        return f(*args, **kwargs)
 
     return decorated

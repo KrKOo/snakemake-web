@@ -1,5 +1,7 @@
+import os
 import uuid
 import requests
+from git import Repo
 
 from app import app
 
@@ -14,3 +16,14 @@ def is_valid_uuid(uuid_to_test, version=4):
     except ValueError:
         return False
     return str(uuid_obj) == uuid_to_test
+
+
+def pull_workflow_definitions():
+    workflow_definition_dir = app.config["WORKFLOW_DEFINITION_DIR"]
+
+    if not os.path.exists(workflow_definition_dir):
+        os.makedirs(workflow_definition_dir)
+        Repo.clone_from(app.config["WORKFLOW_DEFINITION_REPO"], workflow_definition_dir)
+    else:
+        repo = Repo(workflow_definition_dir)
+        repo.remotes.origin.pull()

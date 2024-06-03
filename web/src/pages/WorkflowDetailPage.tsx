@@ -115,7 +115,6 @@ function Row(props: { job: JobInfo }) {
   const { job } = props;
   const [open, setOpen] = useState(false);
 
-  console.log(JobStateToColor[job.state.toLowerCase()]);
   return (
     <>
       <TableRow

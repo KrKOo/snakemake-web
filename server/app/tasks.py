@@ -5,6 +5,7 @@ import shutil
 from app import celery, app
 from subprocess import Popen, PIPE, STDOUT, CalledProcessError, CompletedProcess
 from .models import Workflow, WorkflowState
+from .wrappers import with_updated_workflow_definitions
 
 
 def stream_command(
@@ -68,6 +69,7 @@ def log_handler(log_file_path, line, workflow_id):
 
 
 @celery.task
+@with_updated_workflow_definitions
 def run_workflow(
     workflow_id, log_file_path, workflow_folder, input_dir, output_dir, token
 ):
