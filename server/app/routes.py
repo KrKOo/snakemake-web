@@ -1,12 +1,7 @@
 from flask import Blueprint, request
-from .workflow_handler import (
-    get_workflow_detail,
-    get_workflows,
-    run,
-    cancel,
-    get_workflow_definitions,
-    is_workflow_owned_by_user,
-)
+from .workflow import Workflow
+from .workflow_handler import get_workflows_by_user
+from .workflow_definitions import get_workflow_definitions
 from .wrappers import with_user, with_access_token
 from .utils import is_valid_uuid
 
@@ -22,14 +17,17 @@ def run_workflow(token, username):
     output_dir = data.get("output_dir")
 
     workflow_definition_id = request.json.get("id")
-    workflow_id = run(workflow_definition_id, input_dir, output_dir, username, token)
+    workflow = Workflow()
+    workflow_id = workflow.run(
+        workflow_definition_id, input_dir, output_dir, username, token
+    )
     return {"workflow_id": workflow_id}, 200
 
 
 @api.route("/workflow", methods=["GET"])
 @with_user
 def workflow(username):
-    workflows = get_workflows(username)
+    workflows = get_workflows_by_user(username)
     return workflows, 200
 
 
@@ -39,10 +37,11 @@ def cancel_workflow(username, workflow_id):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
-    if is_workflow_owned_by_user(workflow_id, username):
-        cancel(workflow_id)
-    else:
+    workflow = Workflow(id=workflow_id)
+    if not workflow.exists() or not workflow.is_owned_by_user(username):
         return "Workflow not found", 404
+
+    workflow.cancel()
 
     return "Workflow canceled", 200
 
@@ -53,10 +52,11 @@ def worflow_jobs(username, workflow_id):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
-    if not is_workflow_owned_by_user(workflow_id, username):
+    workflow = Workflow(id=workflow_id)
+    if not workflow.exists() or not workflow.is_owned_by_user(username):
         return "Workflow not found", 404
 
-    workflow_detail = get_workflow_detail(workflow_id)
+    workflow_detail = workflow.get_detail()
 
     return workflow_detail, 200
 
