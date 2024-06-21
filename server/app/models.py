@@ -15,10 +15,12 @@ class WorkflowState(Enum):
     RUNNING = "RUNNING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
+    CANCELLED = "CANCELLED"
 
 
 class Workflow(Document):
     id = StringField(required=True, primary_key=True)
+    task_id = StringField(required=True)
     created_at = DateTimeField(default=lambda: datetime.now(UTC), required=True)
     created_by = StringField(required=True)
     total_jobs = IntField(default=0)

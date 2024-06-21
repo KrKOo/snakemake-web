@@ -3,7 +3,9 @@ from .workflow_handler import (
     get_workflow_jobs_info,
     get_workflows,
     run,
+    cancel,
     get_workflow_definitions,
+    is_workflow_owned_by_user,
 )
 from .wrappers import with_user, with_access_token
 from .utils import is_valid_uuid
@@ -29,6 +31,20 @@ def run_workflow(token, username):
 def workflow(username):
     workflows = get_workflows(username)
     return workflows, 200
+
+
+@api.route("/workflow/<workflow_id>", methods=["DELETE"])
+@with_user
+def cancel_workflow(username, workflow_id):
+    if not is_valid_uuid(workflow_id):
+        return "Invalid workflow ID", 400
+
+    if is_workflow_owned_by_user(workflow_id, username):
+        cancel(workflow_id)
+    else:
+        return "Workflow not found", 404
+
+    return "Workflow cancelled", 200
 
 
 @api.route("/workflow/<workflow_id>/jobs", methods=["GET"])

@@ -4,7 +4,8 @@ import uuid
 import requests
 import json
 from pathlib import Path
-from app import app
+from app import app, celery as celeryapp
+from celery.contrib.abortable import AbortableAsyncResult
 
 from .models import Workflow
 from .utils import tes_auth
@@ -20,15 +21,30 @@ def run(workflow_definition_id, input_dir, output_dir, username, token) -> uuid.
 
     workflow_folder = get_workflow_dir_by_id(workflow_definition_id)
 
+    task_state = run_workflow.delay(str(workflow_id), log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
+
     workflow = Workflow(
         id=str(workflow_id),
+        task_id = task_state.id,
         created_by=username,
     )
+
     workflow.save()
 
-    run_workflow.delay(str(workflow_id), log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
-
     return workflow_id 
+
+def cancel(workflow_id):
+    workflow = Workflow.objects.get(id=workflow_id)
+    result = AbortableAsyncResult(workflow.task_id, backend=celeryapp.backend)
+    result.abort()
+
+def is_workflow_owned_by_user(workflow_id, username):
+    workflow = Workflow.objects.get(id=workflow_id)
+
+    if not workflow:
+        return False 
+
+    return workflow.created_by == username
 
 @with_updated_workflow_definitions
 def get_workflow_definitions():

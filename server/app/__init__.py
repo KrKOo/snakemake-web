@@ -17,7 +17,12 @@ if app.config.get("SECRET_KEY"):
 else:
     app.secret_key = secrets.token_urlsafe(16)
 
-celery = Celery(app.name, broker=app.config.get("CELERY_BROKER_URL"))
+celery = Celery(
+    app.name,
+    broker=app.config.get("CELERY_BROKER_URL"),
+    backend=app.config.get("CELERY_RESULT_BACKEND"),
+)
+
 celery.conf.update(app.config)
 
 mongo_connect(host=app.config.get("MONGODB_URI"))
