@@ -11,9 +11,11 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  Tooltip,
 } from '@mui/material';
 import Paper from '@mui/material/Paper';
 import RefreshIcon from '@mui/icons-material/Refresh';
+import CancelIcon from '@mui/icons-material/Cancel';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import Header from '../components/Header';
@@ -37,17 +39,26 @@ interface JobInfo {
   logs: string;
 }
 
+type WorkflowState = 'UNKNOWN' | 'RUNNING' | 'FINISHED' | 'FAILED' | 'CANCELED';
+
+interface WorfklowDetail {
+  id: string;
+  created_at: string;
+  state: WorkflowState;
+  jobs: JobInfo[];
+}
+
 const WorkflowDetailPage = () => {
   const { workflowId } = useParams();
   const navigate = useNavigate();
 
-  const [jobs, setJobs] = useState<JobInfo[]>([]);
+  const [workflowDetail, setWorkflowDetail] = useState<WorfklowDetail>();
 
   const getJobs = useCallback(() => {
     api
-      .get<JobInfo[]>(`/workflow/${workflowId}/jobs`)
+      .get<WorfklowDetail>(`/workflow/${workflowId}`)
       .then((res) => {
-        setJobs(res.data);
+        setWorkflowDetail(res.data);
       })
       .catch(() => {
         console.error('Failed to get workflow');
@@ -63,6 +74,17 @@ const WorkflowDetailPage = () => {
     getJobs();
   };
 
+  const cancelWorkflowHandler = () => {
+    api
+      .delete(`/workflow/${workflowId}`)
+      .then(() => {
+        getJobs();
+      })
+      .catch(() => {
+        console.error('Failed to cancel workflow');
+      });
+  };
+
   return (
     <>
       <Header />
@@ -70,14 +92,24 @@ const WorkflowDetailPage = () => {
         <div className='mb-4 text-3xl text-black'>
           Workflow ID: {workflowId}
         </div>
-        <IconButton
-          color='primary'
-          size='large'
-          className='float-right'
-          onClick={handleRefresh}>
-          <RefreshIcon fontSize='inherit' />
-        </IconButton>
-        {jobs.length !== 0 ? (
+        <div className='float-right'>
+          {workflowDetail?.state == 'RUNNING' && (
+            <Tooltip title='Cancel workflow' placement='top'>
+              <IconButton
+                color='primary'
+                size='large'
+                onClick={cancelWorkflowHandler}>
+                <CancelIcon fontSize='inherit' />
+              </IconButton>
+            </Tooltip>
+          )}
+          <Tooltip title='Refresh' placement='top'>
+            <IconButton color='primary' size='large' onClick={handleRefresh}>
+              <RefreshIcon fontSize='inherit' />
+            </IconButton>
+          </Tooltip>
+        </div>
+        {workflowDetail?.jobs.length !== 0 ? (
           <TableContainer component={Paper}>
             <Table sx={{ minWidth: 650 }} aria-label='simple table'>
               <TableHead>
@@ -95,7 +127,7 @@ const WorkflowDetailPage = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {jobs.map((job) => {
+                {workflowDetail?.jobs.map((job) => {
                   return <Row key={job.id} job={job} />;
                 })}
               </TableBody>

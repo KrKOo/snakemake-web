@@ -16,12 +16,13 @@ const WorkflowStateToColor: { [state: string]: string } = {
   unknown: 'bg-gray-300',
   running: 'bg-blue-300',
   finished: 'bg-green-300',
+  canceled: 'bg-orange-300',
   failed: 'bg-red-300',
 };
 
 interface WorkflowResponseProps {
   id: string;
-  status: string;
+  state: string;
   created_at: number;
   total_jobs: number;
   finished_jobs: number;
@@ -29,7 +30,7 @@ interface WorkflowResponseProps {
 
 interface WorkflowProps {
   id: string;
-  status: string;
+  state: string;
   created_at: Date;
   total_jobs: number;
   finished_jobs: number;
@@ -88,12 +89,12 @@ const WorkflowsPage = () => {
                     <TableRow
                       key={workflow.id}
                       className={`cursor-pointer hover:brightness-90 ${
-                        WorkflowStateToColor[workflow.status.toLowerCase()]
+                        WorkflowStateToColor[workflow.state.toLowerCase()]
                       }`}
                       onClick={() => navigate(`/workflow/${workflow.id}`)}>
                       <TableCell align='center'>{workflow.id}</TableCell>
                       <TableCell align='center'>
-                        {workflow.status} ({workflow.finished_jobs}/
+                        {workflow.state} ({workflow.finished_jobs}/
                         {workflow.total_jobs})
                       </TableCell>
                       <TableCell align='center'>

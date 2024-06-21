@@ -56,7 +56,7 @@ def get_workflow_definitions():
         workflow_res["id"] = metadata["id"]
         workflow_res["name"] = metadata["name"]
 
-        with open(os.path.join(app.config['WORKFLOW_DEFINITION_DIR'], str(workflow_definition_dir), "Snakefile")) as f:
+        with open(os.path.join(str(workflow_definition_dir), "Snakefile")) as f:
             workflow_res["definition"] = f.read()
 
         res.append(workflow_res)
@@ -86,26 +86,40 @@ def get_workflows(username):
 
     res = []
     for workflow in workflows:
-        workflow_res = {}
-        workflow_res["id"] = workflow.id
-        workflow_res["created_at"] = workflow.created_at.timestamp() * 1000
-        workflow_res["status"] = workflow.state.value
-        workflow_res["total_jobs"] = workflow.total_jobs
-        workflow_res["finished_jobs"] = workflow.finished_jobs
+        workflow_res = {
+            "id": workflow.id,
+            "created_at": workflow.created_at.timestamp() * 1000,
+            "state": workflow.state.value,
+            "total_jobs": workflow.total_jobs,
+            "finished_jobs": workflow.finished_jobs
+        }
 
         res.append(workflow_res)
 
     return res
 
-def get_workflow_jobs_info(username, workflow_id, list_view=False):
-    job_ids = get_workflow_jobs(username, workflow_id)
+def get_workflow_detail(workflow_id):
+    workflow = Workflow.objects.get(id=workflow_id)
+
+    workflow_detail = {
+        "id": workflow.id,
+        "created_at": workflow.created_at.timestamp() * 1000,
+        "state": workflow.state.value,
+        "jobs": get_workflow_jobs_info(workflow_id)
+    }
+
+    return workflow_detail 
+
+
+def get_workflow_jobs_info(workflow_id, list_view=False):
+    job_ids = get_workflow_jobs(workflow_id)
     jobs_info = []
     for job_id in job_ids:
         jobs_info.append(get_job_info(job_id, list_view))
     return jobs_info
 
-def get_workflow_jobs(username, workflow_id) -> list[str]:
-    workflow = Workflow.objects(id=workflow_id, created_by=username).only("job_ids").first()
+def get_workflow_jobs(workflow_id) -> list[str]:
+    workflow = Workflow.objects(id=workflow_id).only("job_ids").first()
     if not workflow:
         return []
 

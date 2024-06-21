@@ -1,6 +1,6 @@
 from flask import Blueprint, request
 from .workflow_handler import (
-    get_workflow_jobs_info,
+    get_workflow_detail,
     get_workflows,
     run,
     cancel,
@@ -44,23 +44,21 @@ def cancel_workflow(username, workflow_id):
     else:
         return "Workflow not found", 404
 
-    return "Workflow cancelled", 200
+    return "Workflow canceled", 200
 
 
-@api.route("/workflow/<workflow_id>/jobs", methods=["GET"])
+@api.route("/workflow/<workflow_id>", methods=["GET"])
 @with_user
 def worflow_jobs(username, workflow_id):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
-    list_view = request.args.get("view") == "list"
-
-    try:
-        jobs_info = get_workflow_jobs_info(username, workflow_id, list_view)
-    except FileNotFoundError:
+    if not is_workflow_owned_by_user(workflow_id, username):
         return "Workflow not found", 404
 
-    return jobs_info, 200
+    workflow_detail = get_workflow_detail(workflow_id)
+
+    return workflow_detail, 200
 
 
 @api.route("/workflow_definition")

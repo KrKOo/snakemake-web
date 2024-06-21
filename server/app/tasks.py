@@ -18,6 +18,7 @@ def stream_command(
     stdout_handler=logging.info,
     abort_condition=None,
     abort_signal=signal.SIGINT,
+    on_abort=None,
     check=False,
     text=True,
     **kwargs,
@@ -30,6 +31,7 @@ def stream_command(
             if abort_condition and not aborted:
                 if abort_condition():
                     os.kill(process.pid, abort_signal)
+                    on_abort(process)
                     aborted = True
 
             reads, _, _ = select.select([process.stdout], [], [], 1)
@@ -118,6 +120,11 @@ def run_workflow(
             )
         )
 
+    def on_abort(process):
+        workflow = Workflow.objects.get(id=workflow_id)
+        workflow.state = WorkflowState.CANCELED
+        workflow.save()
+
     res = stream_command(
         [
             "snakemake",
@@ -142,15 +149,14 @@ def run_workflow(
         cwd=current_workflow_dir,
         stdout_handler=lambda line: log_handler(log_file_path, line, workflow_id),
         abort_condition=self.is_aborted,
+        on_abort=on_abort,
     )
 
     shutil.rmtree(current_workflow_dir)
 
-    if res.returncode != 0:
+    if res.returncode != 0 and not self.is_aborted():
         workflow = Workflow.objects.get(id=workflow_id)
-        workflow.state = (
-            WorkflowState.CANCELLED if self.is_aborted() else WorkflowState.FAILED
-        )
+        workflow.state = WorkflowState.FAILED
         workflow.save()
 
     return res.returncode

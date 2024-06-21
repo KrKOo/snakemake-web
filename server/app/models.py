@@ -15,7 +15,7 @@ class WorkflowState(Enum):
     RUNNING = "RUNNING"
     FINISHED = "FINISHED"
     FAILED = "FAILED"
-    CANCELLED = "CANCELLED"
+    CANCELED = "CANCELED"
 
 
 class Workflow(Document):
