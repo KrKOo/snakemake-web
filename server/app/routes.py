@@ -4,6 +4,7 @@ from .workflow_handler import get_workflows_by_user
 from .workflow_definitions import get_workflow_definitions
 from .wrappers import with_user, with_access_token
 from .utils import is_valid_uuid
+from .auth import AccessToken
 
 api = Blueprint("api", __name__)
 
@@ -11,7 +12,10 @@ api = Blueprint("api", __name__)
 @api.route("/run", methods=["POST"])
 @with_user
 @with_access_token
-def run_workflow(token, username):
+def run_workflow(token: AccessToken, username: str):
+    if not token.has_visa("ControlledAccessGrants", "SnakemakeCompute"):
+        return "Unauthorized", 401
+
     data = request.json
     input_dir = data.get("input_dir")
     output_dir = data.get("output_dir")
@@ -19,7 +23,7 @@ def run_workflow(token, username):
     workflow_definition_id = request.json.get("id")
     workflow = Workflow()
     workflow_id = workflow.run(
-        workflow_definition_id, input_dir, output_dir, username, token
+        workflow_definition_id, input_dir, output_dir, username, token.value
     )
     return {"workflow_id": workflow_id}, 200
 

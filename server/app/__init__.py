@@ -5,6 +5,8 @@ from celery import Celery
 from mongoengine import connect as mongo_connect
 from flask import Flask, send_from_directory
 
+from .auth import AuthClient
+
 app = Flask(__name__)
 
 if os.environ.get("CONFIG_FILE"):
@@ -24,6 +26,12 @@ celery = Celery(
 )
 
 celery.conf.update(app.config)
+
+auth_client = AuthClient(
+    app.config["OIDC_URL"],
+    app.config["OIDC_CLIENT_ID"],
+    app.config["OIDC_CLIENT_SECRET"],
+)
 
 mongo_connect(host=app.config.get("MONGODB_URI"))
 

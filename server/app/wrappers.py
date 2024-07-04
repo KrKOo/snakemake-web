@@ -1,6 +1,8 @@
 from flask import request
 from functools import wraps
+from app import auth_client
 from .utils import pull_workflow_definitions
+from .auth import AccessToken
 
 
 def with_user(f):
@@ -28,7 +30,16 @@ def with_access_token(f):
         token = request.headers.get("X-Forwarded-Access-Token")
         if not token:
             return {
-                "message": "User not authenticated",
+                "message": "No access token",
+                "data": None,
+                "error": "Unauthorized",
+            }, 401
+
+        token = AccessToken(token, auth_client)
+
+        if token.is_expired() or not token.is_valid():
+            return {
+                "message": "Invalid access token",
                 "data": None,
                 "error": "Unauthorized",
             }, 401
