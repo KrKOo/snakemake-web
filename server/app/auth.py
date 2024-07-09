@@ -88,6 +88,17 @@ class AccessToken:
 
         return False
 
+    def get_userinfo(self):
+        response = requests.get(
+            self.auth_client.userinfo_url,
+            headers={"Authorization": f"Bearer {self.value}"},
+        )
+
+        if response.status_code != 200:
+            raise Exception("Failed to get user info: " + response.text)
+
+        return response.json()
+
     def get_data(self):
         jwks_client = jwt.PyJWKClient(self.auth_client.jwks_url)
         header = jwt.get_unverified_header(self.value)
@@ -103,15 +114,7 @@ class AccessToken:
         return data
 
     def get_visas(self) -> list[Visa]:
-        response = requests.get(
-            self.auth_client.userinfo_url,
-            headers={"Authorization": f"Bearer {self.value}"},
-        )
-
-        if response.status_code != 200:
-            raise Exception("Failed to get user info: " + response.text)
-
-        user_info = response.json()
+        user_info = self.get_userinfo()
 
         if "ga4gh_passport_v1" not in user_info:
             return []
@@ -123,12 +126,29 @@ class AccessToken:
 
         return visas
 
+    def get_entitlements(self) -> list[str]:
+        user_info = self.get_userinfo()
+
+        if "eduperson_entitlement" not in user_info:
+            return []
+
+        return user_info["eduperson_entitlement"]
+
     def has_visa(self, type: str, value: str) -> bool:
         visas = self.get_visas()
         print(visas)
 
         for visa in visas:
             if visa.type == type and visa.value == value:
+                return True
+
+        return False
+
+    def has_entitlement(self, entitlement: str) -> bool:
+        entitlements = self.get_entitlements()
+
+        for entitlement in entitlements:
+            if entitlement == entitlement:
                 return True
 
         return False
