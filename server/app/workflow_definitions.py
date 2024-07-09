@@ -1,8 +1,39 @@
 import os
 import json
+from typing import TypedDict
 
 from app import app
 from .wrappers import with_updated_workflow_definitions
+
+
+class Entitlement(TypedDict):
+    prefix: str
+    values: list[str]
+    suffix: str
+
+
+class WorkflowDefinition:
+    def __init__(
+        self, dir: str, id: str, name: str, required_entitlements: list[Entitlement]
+    ):
+        self.dir = dir
+        self.id = id
+        self.name = name
+        self.required_entitlements = required_entitlements
+
+    def __repr__(self):
+        return f"WorkflowDefinition({self.dir}, {self.id}, {self.name}, {self.required_entitlements})"
+
+
+def get_workflow_definition(dir):
+    with open(os.path.join(dir, "metadata.json")) as json_data:
+        metadata = json.load(json_data)
+        return WorkflowDefinition(dir, **metadata)
+
+
+def get_workflow_definitions():
+    workflow_definition_dirs = get_workflow_definition_dirs()
+    return [get_workflow_definition(d) for d in workflow_definition_dirs]
 
 
 def get_workflow_metadata(workflow_dir):

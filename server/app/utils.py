@@ -27,3 +27,7 @@ def pull_workflow_definitions():
     else:
         repo = Repo(workflow_definition_dir)
         repo.remotes.origin.pull()
+
+    branch = app.config["WORKFLOW_DEFINITION_BRANCH"]
+    if branch:
+        repo.git.checkout(branch)
