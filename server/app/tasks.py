@@ -4,8 +4,10 @@ import logging
 import shutil
 import signal
 import select
+from typing import TypedDict
 from celery.contrib.abortable import AbortableTask
-from app import celery, app
+from app import celery
+from flask import current_app as app
 from subprocess import Popen, PIPE, STDOUT, CalledProcessError, CompletedProcess
 
 from .models import Workflow, WorkflowState
@@ -90,25 +92,42 @@ def log_handler(log_file_path, line, workflow_id):
     workflow.save()
 
 
+class TaskConfig:
+    workflow_dir: str
+    workflow_definition_dir: str
+    default_storage_prefix: str
+    storage_s3_endpoint_url: str
+    storage_s3_access_key: str
+    storage_s3_secret_key: str
+    tes_url: str
+    oidc_client_id: str
+    oidc_client_secret: str
+    oidc_url: str
+    oidc_audience: str
+    snakemake_container_image: str
+    snakemake_jobs: int
+
+
 @celery.task(base=AbortableTask, bind=True)
 @with_updated_workflow_definitions
 def run_workflow(
     self,
-    workflow_id,
-    log_file_path,
-    workflow_folder,
-    input_dir,
-    output_dir,
-    token,
+    workflow_id: str,
+    log_file_path: str,
+    workflow_definition_dir: str,
+    input_dir: str,
+    output_dir: str,
+    token: str,
+    config: TaskConfig,
 ):
-    current_workflow_dir = os.path.join(app.config["WORKFLOW_DIR"], workflow_id)
+    workdir = os.path.join(config.workflow_dir, workflow_id)
 
     shutil.copytree(
-        os.path.join(app.config["WORKFLOW_DEFINITION_DIR"], workflow_folder),
-        current_workflow_dir,
+        os.path.join(config.workflow_definition_dir, workflow_definition_dir),
+        workdir,
     )
 
-    snakefile = os.path.join(app.config["WORKFLOW_DIR"], workflow_id, "Snakefile")
+    snakefile = os.path.join(config.workflow_dir, workflow_id, "Snakefile")
 
     with open(snakefile) as f:
         snakefile_template = f.read()
@@ -133,26 +152,26 @@ def run_workflow(
             "--conda-frontend=conda",
             "--executor=auth-tes",
             "--default-storage-provider=s3",
-            f"--default-storage-prefix={app.config['DEFAULT_STORAGE_PREFIX']}",
-            f"--storage-s3-endpoint-url={app.config['STORAGE_S3_ENDPOINT_URL']}",
-            f"--storage-s3-access-key={app.config['STORAGE_S3_ACCESS_KEY']}",
-            f"--storage-s3-secret-key={app.config['STORAGE_S3_SECRET_KEY']}",
-            f"--auth-tes-url={app.config['TES_URL']}",
-            f"--auth-tes-oidc-client-id={app.config['OIDC_CLIENT_ID']}",
-            f"--auth-tes-oidc-client-secret={app.config['OIDC_CLIENT_SECRET']}",
-            f"--auth-tes-oidc-url={app.config['OIDC_URL']}",
+            f"--default-storage-prefix={config.default_storage_prefix}",
+            f"--storage-s3-endpoint-url={config.storage_s3_endpoint_url}",
+            f"--storage-s3-access-key={config.storage_s3_access_key}",
+            f"--storage-s3-secret-key={config.storage_s3_secret_key}",
+            f"--auth-tes-url={config.tes_url}",
+            f"--auth-tes-oidc-client-id={config.oidc_client_id}",
+            f"--auth-tes-oidc-client-secret={config.oidc_client_secret}",
+            f"--auth-tes-oidc-url={config.oidc_url}",
             f"--auth-tes-oidc-access-token={token}",
-            f"--auth-tes-oidc-audience={app.config['OIDC_AUDIENCE']}",
-            f"--container-image={app.config['SNAKEMAKE_CONTAINER_IMAGE']}",
-            f"--jobs={app.config['SNAKEMAKE_JOBS']}",
+            f"--auth-tes-oidc-audience={config.oidc_audience}",
+            f"--container-image={config.snakemake_container_image}",
+            f"--jobs={config.snakemake_jobs}",
         ],
-        cwd=current_workflow_dir,
+        cwd=workdir,
         stdout_handler=lambda line: log_handler(log_file_path, line, workflow_id),
         abort_condition=self.is_aborted,
         on_abort=on_abort,
     )
 
-    shutil.rmtree(current_workflow_dir)
+    shutil.rmtree(workdir)
 
     if res.returncode != 0 and not self.is_aborted():
         workflow = Workflow.objects.get(id=workflow_id)

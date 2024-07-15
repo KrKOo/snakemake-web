@@ -1,8 +1,30 @@
-from flask import request
+import os
+from git import Repo
+from flask import request, current_app as app
 from functools import wraps
-from app import auth_client
-from .utils import pull_workflow_definitions
-from .auth import AccessToken
+from .auth import AccessToken, AuthClient
+
+
+auth_client = AuthClient(
+    app.config["OIDC_URL"],
+    app.config["OIDC_CLIENT_ID"],
+    app.config["OIDC_CLIENT_SECRET"],
+)
+
+
+def pull_workflow_definitions():
+    workflow_definition_dir = app.config["WORKFLOW_DEFINITION_DIR"]
+
+    if not os.path.exists(workflow_definition_dir):
+        os.makedirs(workflow_definition_dir)
+        Repo.clone_from(app.config["WORKFLOW_DEFINITION_REPO"], workflow_definition_dir)
+    else:
+        repo = Repo(workflow_definition_dir)
+        repo.remotes.origin.pull()
+
+    branch = app.config.get("WORKFLOW_DEFINITION_BRANCH")
+    if branch:
+        repo.git.checkout(branch)
 
 
 def with_user(f):

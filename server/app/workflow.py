@@ -4,24 +4,34 @@ import time
 import uuid
 import requests
 from pathlib import Path
-from app import app, celery as celeryapp
+from app import celery as celeryapp
 from celery.contrib.abortable import AbortableAsyncResult
 
 from .models import Workflow as WorkflowModel
-from .utils import tes_auth
 from .tasks import run_workflow
-from .workflow_definitions import get_workflow_definition_dir_by_id
+from .workflow_definition.manager import get_workflow_definition_by_id
 
 
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
 
+
 class WorkflowMultipleRuns(Exception):
     """Raised when trying to run a workflow that was already run"""
 
+
 class Workflow:
-    def __init__(self, id: str = None):
+    def __init__(
+        self,
+        id: str = None,
+        log_dir: str = None,
+        tes_url: str = None,
+        tes_auth: requests.auth.HTTPBasicAuth = None,
+    ):
         self.id = id
+        self.lod_dir = log_dir
+        self.tes_url = tes_url
+        self.tes_auth = tes_auth
 
         self.was_run = self.exists()
 
@@ -32,6 +42,7 @@ class Workflow:
                 raise WorkflowWasNotRun
 
             return f(self, *args, **kwargs)
+
         return decorated
 
     def run(self, workflow_definition_id, input_dir, output_dir, username, token):
@@ -41,16 +52,28 @@ class Workflow:
         self.id = str(uuid.uuid4())
         self.was_run = True
 
-        log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{int(time.time() * 1000)}_{self.id}.txt"))
+        log_file_path = Path(
+            os.path.join(
+                self.log_dir, username, f"{int(time.time() * 1000)}_{self.id}.txt"
+            )
+        )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        workflow_folder = get_workflow_definition_dir_by_id(workflow_definition_id)
+        workflow_definition = get_workflow_definition_by_id(workflow_definition_id)
 
-        task_state = run_workflow.delay(self.id, log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
+        task_state = run_workflow.delay(
+            self.id,
+            log_file_path.as_posix(),
+            workflow_definition.dir,
+            input_dir,
+            output_dir,
+            token,
+            config,
+        )
 
         workflow = WorkflowModel(
             id=self.id,
-            task_id = task_state.id,
+            task_id=task_state.id,
             created_by=username,
         )
 
@@ -67,14 +90,16 @@ class Workflow:
     @ensure_was_run
     def cancel(self):
         workflow_object = WorkflowModel.objects.get(id=self.id)
-        result = AbortableAsyncResult(workflow_object.task_id, backend=celeryapp.backend)
+        result = AbortableAsyncResult(
+            workflow_object.task_id, backend=celeryapp.backend
+        )
         result.abort()
 
     @ensure_was_run
     def is_owned_by_user(self, username):
         workflow_object = WorkflowModel.objects.get(id=self.id)
         return workflow_object.created_by == username
-    
+
     @ensure_was_run
     def get_detail(self):
         workflow_object = WorkflowModel.objects.get(id=self.id)
@@ -83,9 +108,9 @@ class Workflow:
             "id": workflow_object.id,
             "created_at": workflow_object.created_at.timestamp() * 1000,
             "state": workflow_object.state.value,
-            "jobs": self.get_jobs_info()
+            "jobs": self.get_jobs_info(),
         }
-        return workflow_detail 
+        return workflow_detail
 
     @ensure_was_run
     def get_jobs_info(self, list_view=False):
@@ -103,11 +128,11 @@ class Workflow:
         return workflow.job_ids
 
     def _get_job_info(self, job_id, list_view=False):
-        request_url = f"{app.config["TES_URL"]}/v1/tasks/{job_id}"
+        request_url = f"{self.tes_url}/v1/tasks/{job_id}"
         if not list_view:
             request_url += "?view=FULL"
-        
-        response = requests.get(request_url, auth=tes_auth)
+
+        response = requests.get(request_url, auth=self.tes_auth)
 
         if response.status_code == 200:
             data = response.json()
@@ -127,4 +152,3 @@ class Workflow:
             return job_info
         else:
             return None
-

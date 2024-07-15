@@ -1,7 +1,8 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app as app
+import requests
 from .workflow import Workflow
 from .workflow_handler import get_workflows_by_user
-from .workflow_definitions import get_workflow_definitions
+from .workflow_definition.manager import get_workflow_definition_list
 from .wrappers import with_user, with_access_token
 from .utils import is_valid_uuid
 from .auth import AccessToken
@@ -22,7 +23,14 @@ def run_workflow(token: AccessToken, username: str):
     input_dir = data.get("input_dir")
     output_dir = data.get("output_dir")
 
-    workflow = Workflow()
+    workflow = Workflow(
+        log_dir=app.config["WORKFLOW_LOG_DIR"],
+        tes_url=app.config["TES_URL"],
+        tes_auth=requests.auth.HTTPBasicAuth(
+            username=app.config["TES_BASIC_AUTH_USERNAME"],
+            password=app.config["TES_BASIC_AUTH_PASSWORD"],
+        ),
+    )
     workflow_id = workflow.run(
         workflow_definition_id, input_dir, output_dir, username, token.value
     )
@@ -42,7 +50,15 @@ def cancel_workflow(username, workflow_id):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
-    workflow = Workflow(id=workflow_id)
+    workflow = Workflow(
+        id=workflow_id,
+        log_dir=app.config["WORKFLOW_LOG_DIR"],
+        tes_url=app.config["TES_URL"],
+        tes_auth=requests.auth.HTTPBasicAuth(
+            username=app.config["TES_BASIC_AUTH_USERNAME"],
+            password=app.config["TES_BASIC_AUTH_PASSWORD"],
+        ),
+    )
     if not workflow.exists() or not workflow.is_owned_by_user(username):
         return "Workflow not found", 404
 
@@ -57,7 +73,15 @@ def worflow_jobs(username, workflow_id):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
-    workflow = Workflow(id=workflow_id)
+    workflow = Workflow(
+        id=workflow_id,
+        log_dir=app.config["WORKFLOW_LOG_DIR"],
+        tes_url=app.config["TES_URL"],
+        tes_auth=requests.auth.HTTPBasicAuth(
+            username=app.config["TES_BASIC_AUTH_USERNAME"],
+            password=app.config["TES_BASIC_AUTH_PASSWORD"],
+        ),
+    )
     if not workflow.exists() or not workflow.is_owned_by_user(username):
         return "Workflow not found", 404
 
@@ -68,6 +92,6 @@ def worflow_jobs(username, workflow_id):
 
 @api.route("/workflow_definition")
 def workflow_definition():
-    workflow_definitions = get_workflow_definitions()
+    workflow_definitions = get_workflow_definition_list()
 
     return workflow_definitions, 200
