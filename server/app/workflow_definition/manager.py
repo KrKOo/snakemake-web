@@ -1,6 +1,5 @@
 import os
 import json
-
 from app.wrappers import with_updated_workflow_definitions
 from flask import current_app as app
 

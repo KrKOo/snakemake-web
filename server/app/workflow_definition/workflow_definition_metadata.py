@@ -30,6 +30,9 @@ class WorkflowDefinitionMetadata:
     def _get_allowed_entitlement_patterns(
         self, allowed_entitlements: list[Entitlement]
     ) -> list[str]:
+        if not allowed_entitlements:
+            return []
+
         patterns = []
 
         for entitlement in allowed_entitlements:
@@ -38,9 +41,9 @@ class WorkflowDefinitionMetadata:
 
         return patterns
 
-    def is_entitlement_satisfied(self, entitlement: list[str]) -> bool:
+    def is_entitlement_satisfied(self, entitlements: list[str]) -> bool:
         for pattern in self.allowed_entitlement_patterns:
-            if any(re.match(pattern, e) for e in entitlement):
+            if any(re.match(pattern, e) for e in entitlements):
                 return True
 
         return False
