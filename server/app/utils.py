@@ -1,14 +1,10 @@
 import os
 import uuid
-import requests
+
+from flask import Flask
 from git import Repo
-from flask import Flask, current_app as app
+
 from .workflow_config import WorkflowConfig
-
-
-tes_auth = requests.auth.HTTPBasicAuth(
-    app.config["TES_BASIC_AUTH_USER"], app.config["TES_BASIC_AUTH_PASSWORD"]
-)
 
 
 def is_valid_uuid(uuid_to_test, version=4):

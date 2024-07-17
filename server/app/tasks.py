@@ -1,17 +1,17 @@
+import logging
 import os
 import re
-import logging
+import select
 import shutil
 import signal
-import select
+from subprocess import PIPE, STDOUT, CalledProcessError, CompletedProcess, Popen
+
 from celery import shared_task
 from celery.contrib.abortable import AbortableTask
-from subprocess import Popen, PIPE, STDOUT, CalledProcessError, CompletedProcess
 
-from .utils import pull_workflow_definitions
-
-from .workflow_config import WorkflowConfig
 from .models import Workflow, WorkflowState
+from .utils import pull_workflow_definitions
+from .workflow_config import WorkflowConfig
 
 
 def stream_command(

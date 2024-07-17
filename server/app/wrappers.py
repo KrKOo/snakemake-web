@@ -1,8 +1,10 @@
-from flask import request, current_app as app
 from functools import wraps
 
-from .utils import pull_workflow_definitions
+from flask import current_app as app
+from flask import request
+
 from .auth import AccessToken, AuthClient
+from .utils import pull_workflow_definitions
 
 
 def with_user(f):

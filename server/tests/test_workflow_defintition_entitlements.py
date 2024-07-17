@@ -1,13 +1,9 @@
 import pytest
 
-from app.workflow_definition import Entitlement, WorkflowDefinitionMetadata
 from app import create_app
+from app.workflow_definition import Entitlement, WorkflowDefinitionMetadata
 
 
-# from server.app.workflow_definition.workflow_definition_metadata import (
-#     Entitlement,
-#     WorkflowDefinitionMetadata,
-# )
 @pytest.fixture
 def app():
     app = create_app()

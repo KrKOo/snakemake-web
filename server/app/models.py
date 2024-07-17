@@ -1,12 +1,13 @@
-from datetime import datetime, UTC
+from datetime import UTC, datetime
 from enum import Enum
+
 from mongoengine import (
-    Document,
-    StringField,
     DateTimeField,
-    IntField,
+    Document,
     EnumField,
+    IntField,
     ListField,
+    StringField,
 )
 
 

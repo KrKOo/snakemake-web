@@ -1,21 +1,25 @@
-from functools import wraps
 import os
 import time
 import uuid
-import requests
+from functools import wraps
 from pathlib import Path
-from flask import current_app as app
+
+import requests
 from celery.contrib.abortable import AbortableAsyncResult
+from flask import current_app as app
 
 from .models import Workflow as WorkflowModel
 from .tasks import run_workflow
 from .workflow_definition.manager import get_workflow_definition_by_id
 
+
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
 
+
 class WorkflowMultipleRuns(Exception):
     """Raised when trying to run a workflow that was already run"""
+
 
 class Workflow:
     def __init__(self, id: str = None):
@@ -30,26 +34,49 @@ class Workflow:
                 raise WorkflowWasNotRun
 
             return f(self, *args, **kwargs)
+
         return decorated
 
-    def run(self, workflow_config, workflow_definition_id, input_dir, output_dir, username, token):
+    def run(
+        self,
+        workflow_config,
+        workflow_definition_id,
+        input_dir,
+        output_dir,
+        username,
+        token,
+    ):
         if self.was_run:
             raise WorkflowMultipleRuns
 
         self.id = str(uuid.uuid4())
         self.was_run = True
 
-        log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{int(time.time() * 1000)}_{self.id}.txt"))
+        log_file_path = Path(
+            os.path.join(
+                app.config["LOG_DIR"],
+                username,
+                f"{int(time.time() * 1000)}_{self.id}.txt",
+            )
+        )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         workflow_folder = get_workflow_definition_by_id(workflow_definition_id).dir
 
         # TODO: replace app with config
-        task_state = run_workflow.delay(workflow_config, self.id, log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
+        task_state = run_workflow.delay(
+            workflow_config,
+            self.id,
+            log_file_path.as_posix(),
+            workflow_folder,
+            input_dir,
+            output_dir,
+            token,
+        )
 
         workflow = WorkflowModel(
             id=self.id,
-            task_id = task_state.id,
+            task_id=task_state.id,
             created_by=username,
         )
 
@@ -73,7 +100,7 @@ class Workflow:
     def is_owned_by_user(self, username):
         workflow_object = WorkflowModel.objects.get(id=self.id)
         return workflow_object.created_by == username
-    
+
     @ensure_was_run
     def get_detail(self):
         workflow_object = WorkflowModel.objects.get(id=self.id)
@@ -82,9 +109,9 @@ class Workflow:
             "id": workflow_object.id,
             "created_at": workflow_object.created_at.timestamp() * 1000,
             "state": workflow_object.state.value,
-            "jobs": self.get_jobs_info()
+            "jobs": self.get_jobs_info(),
         }
-        return workflow_detail 
+        return workflow_detail
 
     @ensure_was_run
     def get_jobs_info(self, list_view=False):
@@ -105,7 +132,7 @@ class Workflow:
         request_url = f"{app.config["TES_URL"]}/v1/tasks/{job_id}"
         if not list_view:
             request_url += "?view=FULL"
-        
+
         tes_auth = requests.auth.HTTPBasicAuth(
             app.config["TES_BASIC_AUTH_USER"], app.config["TES_BASIC_AUTH_PASSWORD"]
         )
@@ -129,4 +156,3 @@ class Workflow:
             return job_info
         else:
             return None
-
