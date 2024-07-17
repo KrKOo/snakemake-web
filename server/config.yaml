@@ -1,0 +1,28 @@
+app:
+  secret_key: 192b9bdd22ab9ed4d12e236c78afcb9a393ec15f71bbf5dc987d54727823bcbf
+  log_dir: /snakemake/logs
+  web_dir: web
+  workflow_dir: /snakemake/workflows
+  workflow_definition_dir: /snakemake/workflow_definitions_git
+  workflow_definition_repo: https://github.com/KrKOo/snakemake-web-workflows.git
+  workflow_definition_branch: eduperson_entitlements
+
+snakemake:
+  snakemake_container_image: krkoo/snakemake:0.3
+  snakemake_jobs: 3 
+  default_storage_prefix: s3://test2 
+  tes_url: http://localhost:8000
+  tes_basic_auth_user: password
+  tes_basic_auth_password: str
+  tes_oidc_url: https://krkoo-aai.dyn.cloud.e-infra.cz/oidc
+  tes_oidc_client_id: app-123
+  tes_oidc_client_secret: secret_value
+  tes_oidc_audience: snake123
+  storage_s3_endpoint_url: http://minio:9000
+  storage_s3_access_key: user
+  storage_s3_secret_key: asdfasdf
+celery:
+  broker_url: amqp://guest:guest@rabbitmq-service:5672//
+  result_backend: redis://redis-service:6379/0
+mongo:
+  mongodb_uri: mongodb://admin:password@localhost/snakemake-web
