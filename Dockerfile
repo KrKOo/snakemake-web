@@ -49,4 +49,4 @@ RUN source /opt/conda/etc/profile.d/conda.sh && conda init bash
 COPY --from=build /app/dist /app/web
 COPY ./server /app/api
 WORKDIR /app/api
-CMD ["uvicorn", "--host", "0.0.0.0", "--port", "80", "--interface", "wsgi" ,"run:app"]
+CMD ["uvicorn", "--host", "0.0.0.0", "--port", "80", "--interface", "wsgi" ,"run:create_app"]

@@ -1,9 +1,12 @@
-from flask import Blueprint, request
+from flask import Blueprint, request, current_app
 from .workflow import Workflow
 from .workflow_handler import get_workflows_by_user
-from .workflow_definitions import get_workflow_definitions
+from .workflow_definition.manager import (
+    get_workflow_definition_by_id,
+    get_workflow_definition_list,
+)
 from .wrappers import with_user, with_access_token
-from .utils import is_valid_uuid
+from .utils import app_to_workflow_config, is_valid_uuid
 from .auth import AccessToken
 
 api = Blueprint("api", __name__)
@@ -16,15 +19,25 @@ def run_workflow(token: AccessToken, username: str):
     data = request.json
     workflow_definition_id = data.get("id")
 
-    if not token.has_visa("ControlledAccessGrants", workflow_definition_id):
+    workflow_definition = get_workflow_definition_by_id(workflow_definition_id)
+    if not workflow_definition:
+        return "Workflow definition not found", 404
+
+    if token.is_authorized_for_workflow(workflow_definition):
         return "Unauthorized", 401
 
     input_dir = data.get("input_dir")
     output_dir = data.get("output_dir")
 
+    workflow_config = app_to_workflow_config(current_app)
     workflow = Workflow()
     workflow_id = workflow.run(
-        workflow_definition_id, input_dir, output_dir, username, token.value
+        workflow_config,
+        workflow_definition_id,
+        input_dir,
+        output_dir,
+        username,
+        token.value,
     )
     return {"workflow_id": workflow_id}, 200
 
@@ -68,6 +81,6 @@ def worflow_jobs(username, workflow_id):
 
 @api.route("/workflow_definition")
 def workflow_definition():
-    workflow_definitions = get_workflow_definitions()
+    workflow_definitions = get_workflow_definition_list()
 
     return workflow_definitions, 200

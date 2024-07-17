@@ -1,6 +1,8 @@
 import jwt
 import requests
 
+from .workflow_definition import WorkflowDefinitionMetadata
+
 
 class Visa:
     def __init__(self, token: str):
@@ -136,7 +138,6 @@ class AccessToken:
 
     def has_visa(self, type: str, value: str) -> bool:
         visas = self.get_visas()
-        print(visas)
 
         for visa in visas:
             if visa.type == type and visa.value == value:
@@ -150,5 +151,16 @@ class AccessToken:
         for entitlement in entitlements:
             if entitlement == entitlement:
                 return True
+
+        return False
+
+    def is_authorized_for_workflow(
+        self, workflow_definition: WorkflowDefinitionMetadata
+    ) -> bool:
+        if self.has_visa("ControlledAccessGrants", workflow_definition.id):
+            return True
+
+        if workflow_definition.is_entitlement_satisfied(self.get_entitlements()):
+            return True
 
         return False

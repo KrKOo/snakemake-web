@@ -1,8 +1,8 @@
-from flask import request
+from flask import request, current_app as app
 from functools import wraps
-from app import auth_client
+
 from .utils import pull_workflow_definitions
-from .auth import AccessToken
+from .auth import AccessToken, AuthClient
 
 
 def with_user(f):
@@ -35,6 +35,11 @@ def with_access_token(f):
                 "error": "Unauthorized",
             }, 401
 
+        auth_client = AuthClient(
+            app.config["OIDC_URL"],
+            app.config["OIDC_CLIENT_ID"],
+            app.config["OIDC_CLIENT_SECRET"],
+        )
         token = AccessToken(token, auth_client)
 
         if token.is_expired() or not token.is_valid():
@@ -52,7 +57,11 @@ def with_access_token(f):
 def with_updated_workflow_definitions(f):
     @wraps(f)
     def decorated(*args, **kwargs):
-        pull_workflow_definitions()
+        pull_workflow_definitions(
+            app.config["WORKFLOW_DEFINITION_DIR"],
+            app.config["WORKFLOW_DEFINITION_REPO"],
+            app.config["WORKFLOW_DEFINITION_BRANCH"],
+        )
         return f(*args, **kwargs)
 
     return decorated

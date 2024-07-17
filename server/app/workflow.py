@@ -4,14 +4,12 @@ import time
 import uuid
 import requests
 from pathlib import Path
-from app import app, celery as celeryapp
+from flask import current_app as app
 from celery.contrib.abortable import AbortableAsyncResult
 
 from .models import Workflow as WorkflowModel
-from .utils import tes_auth
 from .tasks import run_workflow
-from .workflow_definitions import get_workflow_definition_dir_by_id
-
+from .workflow_definition.manager import get_workflow_definition_by_id
 
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
@@ -34,7 +32,7 @@ class Workflow:
             return f(self, *args, **kwargs)
         return decorated
 
-    def run(self, workflow_definition_id, input_dir, output_dir, username, token):
+    def run(self, workflow_config, workflow_definition_id, input_dir, output_dir, username, token):
         if self.was_run:
             raise WorkflowMultipleRuns
 
@@ -44,9 +42,10 @@ class Workflow:
         log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{int(time.time() * 1000)}_{self.id}.txt"))
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        workflow_folder = get_workflow_definition_dir_by_id(workflow_definition_id)
+        workflow_folder = get_workflow_definition_by_id(workflow_definition_id).dir
 
-        task_state = run_workflow.delay(self.id, log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
+        # TODO: replace app with config
+        task_state = run_workflow.delay(workflow_config, self.id, log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
 
         workflow = WorkflowModel(
             id=self.id,
@@ -67,7 +66,7 @@ class Workflow:
     @ensure_was_run
     def cancel(self):
         workflow_object = WorkflowModel.objects.get(id=self.id)
-        result = AbortableAsyncResult(workflow_object.task_id, backend=celeryapp.backend)
+        result = AbortableAsyncResult(workflow_object.task_id)
         result.abort()
 
     @ensure_was_run
@@ -107,6 +106,9 @@ class Workflow:
         if not list_view:
             request_url += "?view=FULL"
         
+        tes_auth = requests.auth.HTTPBasicAuth(
+            app.config["TES_BASIC_AUTH_USER"], app.config["TES_BASIC_AUTH_PASSWORD"]
+        )
         response = requests.get(request_url, auth=tes_auth)
 
         if response.status_code == 200:
