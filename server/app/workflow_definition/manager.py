@@ -1,9 +1,11 @@
-import os
 import json
-from app.wrappers import with_updated_workflow_definitions
+import os
+
 from flask import current_app as app
 
-from . import WorkflowDefinitionMetadata, WorkflowDefinitionListItem
+from app.wrappers import with_updated_workflow_definitions
+
+from . import WorkflowDefinitionListItem, WorkflowDefinitionMetadata
 
 
 def get_workflow_definition(dir: str) -> WorkflowDefinitionMetadata:

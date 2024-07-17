@@ -1,10 +1,10 @@
 import os
 import secrets
-import sys
 import tomllib
+
 from celery import Celery
-from mongoengine import connect as mongo_connect
 from flask import Flask, send_from_directory
+from mongoengine import connect as mongo_connect
 
 
 def create_app():

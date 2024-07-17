@@ -1,7 +1,7 @@
 import pytest
 
-from app.workflow_definition import Entitlement, WorkflowDefinitionMetadata
 from app import create_app
+from app.workflow_definition import Entitlement, WorkflowDefinitionMetadata
 
 
 @pytest.fixture

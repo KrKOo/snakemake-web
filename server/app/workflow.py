@@ -1,19 +1,20 @@
-from functools import wraps
 import os
 import time
 import uuid
-import requests
+from functools import wraps
 from pathlib import Path
-from flask import current_app as app
+
+import requests
 from celery.contrib.abortable import AbortableAsyncResult
+from flask import current_app as app
 
 from .models import Workflow as WorkflowModel
 from .tasks import run_workflow
 from .workflow_definition.manager import get_workflow_definition_by_id
 
+
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
-
 
 class WorkflowMultipleRuns(Exception):
     """Raised when trying to run a workflow that was already run"""
@@ -37,19 +38,42 @@ class Workflow:
 
         return decorated
 
-    def run(self, workflow_config, workflow_definition_id, input_dir, output_dir, username, token):
+    def run(
+        self,
+        workflow_config,
+        workflow_definition_id,
+        input_dir,
+        output_dir,
+        username,
+        token,
+    ):
         if self.was_run:
             raise WorkflowMultipleRuns
 
         self.id = str(uuid.uuid4())
         self.was_run = True
 
-        log_file_path = Path(os.path.join(app.config["LOG_DIR"], username, f"{int(time.time() * 1000)}_{self.id}.txt"))
+        log_file_path = Path(
+            os.path.join(
+                app.config["LOG_DIR"],
+                username,
+                f"{int(time.time() * 1000)}_{self.id}.txt",
+            )
+        )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         workflow_folder = get_workflow_definition_by_id(workflow_definition_id).dir
 
-        task_state = run_workflow.delay(workflow_config, self.id, log_file_path.as_posix(), workflow_folder, input_dir, output_dir, token)
+        # TODO: replace app with config
+        task_state = run_workflow.delay(
+            workflow_config,
+            self.id,
+            log_file_path.as_posix(),
+            workflow_folder,
+            input_dir,
+            output_dir,
+            token,
+        )
 
         workflow = WorkflowModel(
             id=self.id,
@@ -109,7 +133,7 @@ class Workflow:
         request_url = f"{self.tes_url}/v1/tasks/{job_id}"
         if not list_view:
             request_url += "?view=FULL"
-        
+
         tes_auth = requests.auth.HTTPBasicAuth(
             app.config["TES_BASIC_AUTH_USER"], app.config["TES_BASIC_AUTH_PASSWORD"]
         )
