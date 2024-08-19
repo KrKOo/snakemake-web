@@ -11,6 +11,7 @@ from flask import current_app as app
 from .models import Workflow as WorkflowModel
 from .tasks import run_workflow
 from .workflow_definition.manager import get_workflow_definition_by_id
+from .auth import AccessToken
 
 
 class WorkflowWasNotRun(Exception):
@@ -45,7 +46,7 @@ class Workflow:
         input_dir,
         output_dir,
         username,
-        token,
+        token: AccessToken,
     ):
         if self.was_run:
             raise WorkflowMultipleRuns
@@ -64,7 +65,8 @@ class Workflow:
 
         workflow_folder = get_workflow_definition_by_id(workflow_definition_id).dir
 
-        # TODO: replace app with config
+        result_bucket = token.userinfo.get("sub").replace("@", "_")
+
         task_state = run_workflow.delay(
             workflow_config,
             self.id,
@@ -72,8 +74,9 @@ class Workflow:
             workflow_folder,
             input_dir,
             output_dir,
+            result_bucket,
             username,
-            token,
+            token.value,
         )
 
         workflow = WorkflowModel(

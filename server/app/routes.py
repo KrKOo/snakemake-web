@@ -38,7 +38,7 @@ def run_workflow(token: AccessToken, username: str):
         input_dir,
         output_dir,
         username,
-        token.value,
+        token,
     )
     return {"workflow_id": workflow_id}, 200
 
