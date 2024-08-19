@@ -72,6 +72,7 @@ class Workflow:
             workflow_folder,
             input_dir,
             output_dir,
+            username,
             token,
         )
 

@@ -25,8 +25,8 @@ def pull_workflow_definitions(
         repo = Repo(workflow_definition_directory)
         repo.remotes.origin.pull()
 
-    if branch:
-        repo.git.checkout(branch)
+        if branch:
+            repo.git.checkout(branch)
 
 
 def app_to_workflow_config(app: Flask):
@@ -40,10 +40,14 @@ def app_to_workflow_config(app: Flask):
         storage_s3_access_key=app.config.get("STORAGE_S3_ACCESS_KEY", ""),
         storage_s3_secret_key=app.config.get("STORAGE_S3_SECRET_KEY", ""),
         auth_tes_url=app.config.get("TES_URL", ""),
-        auth_tes_oidc_client_id=app.config.get("OIDC_CLIENT_ID", ""),
-        auth_tes_oidc_client_secret=app.config.get("OIDC_CLIENT_SECRET", ""),
-        auth_tes_oidc_url=app.config.get("OIDC_URL", ""),
-        auth_tes_oidc_audience=app.config.get("OIDC_AUDIENCE", ""),
+        oidc_client_id=app.config.get("OIDC_CLIENT_ID", ""),
+        oidc_client_secret=app.config.get("OIDC_CLIENT_SECRET", ""),
+        oidc_url=app.config.get("OIDC_URL", ""),
+        oidc_audience=app.config.get("OIDC_AUDIENCE", ""),
         container_image=app.config.get("SNAKEMAKE_CONTAINER_IMAGE", ""),
         jobs=app.config.get("SNAKEMAKE_JOBS", 1),
+        result_bucket=app.config.get("RESULT_BUCKET", ""),
+        inbox_host=app.config.get("INBOX_HOST", ""),
+        download_host=app.config.get("DOWNLOAD_HOST", ""),
+        tmp_dir=app.config.get("TMP_DIR", ""),
     )

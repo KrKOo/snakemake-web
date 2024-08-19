@@ -7,4 +7,10 @@ redis==5.0.6
 mongoengine==0.28.2
 GitPython==3.1.42
 eventlet==0.36.1
-git+https://github.com/CERIT-SC/snakemake-executor-plugin-auth-tes
+PyJWT==2.8.0
+requests==2.31.0
+celery==5.3.6
+git+https://github.com/KrKOo/snakemake-auth-plugins.git@main#egg=oidc-auth-plugin&subdirectory=oidc-auth-plugin
+git+https://github.com/KrKOo/snakemake-auth-plugins.git@main#egg=snakemake-executor-plugin-auth-tes&subdirectory=snakemake-executor-plugin-auth-tes
+git+https://github.com/KrKOo/snakemake-auth-plugins.git@main#egg=snakemake-storage-plugin-http&subdirectory=snakemake-storage-plugin-http
+git+https://github.com/KrKOo/snakemake-auth-plugins.git@main#egg=snakemake-storage-plugin-s3&subdirectory=snakemake-storage-plugin-s3
