@@ -18,6 +18,10 @@ api = Blueprint("api", __name__)
 @with_access_token
 def run_workflow(token: AccessToken, username: str):
     data = request.json
+
+    if not data:
+        return "Invalid request", 400
+
     workflow_definition_id = data.get("id")
 
     workflow_definition = get_workflow_definition_by_id(workflow_definition_id)

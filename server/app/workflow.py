@@ -22,13 +22,11 @@ class WorkflowMultipleRuns(Exception):
 
 
 class Workflow:
-    def __init__(
-        self,
-        id: str = None,
-    ):
+    def __init__(self, id: str = ""):
         self.id = id
         self.was_run = self.exists()
 
+    @staticmethod
     def ensure_was_run(f):
         @wraps(f)
         def decorated(self, *args, **kwargs):

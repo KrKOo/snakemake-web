@@ -16,11 +16,11 @@ def is_valid_uuid(uuid_to_test, version=4):
 
 
 def pull_workflow_definitions(
-    workflow_definition_directory: str, repo: str, branch: str = None
+    workflow_definition_directory: str, repository: str, branch: str = ""
 ):
     if not os.path.exists(workflow_definition_directory):
         os.makedirs(workflow_definition_directory)
-        Repo.clone_from(repo, workflow_definition_directory)
+        Repo.clone_from(repository, workflow_definition_directory)
     else:
         repo = Repo(workflow_definition_directory)
         repo.remotes.origin.pull()

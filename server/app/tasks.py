@@ -33,21 +33,23 @@ def stream_command(
             if abort_condition and not aborted:
                 if abort_condition():
                     os.kill(process.pid, abort_signal)
-                    on_abort(process)
+                    on_abort(process) if on_abort else None
                     aborted = True
 
             reads, _, _ = select.select([process.stdout], [], [], 1)
             if not reads:
                 continue
 
-            line = process.stdout.readline()
+            line = process.stdout.readline() if process.stdout is not None else None
+
             if not line:
                 break
 
             stdout_handler(line[:-1])
 
-    retcode = process.poll()
-    if check and retcode:
+    retcode = process.wait()
+
+    if check and retcode != 0:
         raise CalledProcessError(retcode, process.args)
     return CompletedProcess(process.args, retcode)
 

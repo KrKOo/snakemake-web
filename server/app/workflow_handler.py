@@ -1,9 +1,13 @@
 from .models import Workflow as WorkflowModel
+from typing import Any, cast
 
 
-def get_workflows_by_user(username):
-    workflows = WorkflowModel.objects(created_by=username).only(
-        "id", "state", "created_at", "total_jobs", "finished_jobs"
+def get_workflows_by_user(username: str):
+    workflows: list[Any] = cast(
+        list[Any],
+        WorkflowModel.objects(created_by=username).only(
+            "id", "state", "created_at", "total_jobs", "finished_jobs"
+        ),
     )
 
     res = []
