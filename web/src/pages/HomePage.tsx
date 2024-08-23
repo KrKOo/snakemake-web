@@ -1,11 +1,11 @@
 import {
   Accordion,
-  AccordionActions,
   AccordionDetails,
   AccordionSummary,
   Button,
   InputAdornment,
   TextField,
+  Grid,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import api from '../utils/api';
@@ -77,39 +77,55 @@ const HomePage = () => {
                 {workflow.name}
               </AccordionSummary>
               <AccordionDetails>
-                <TextField
-                  required
-                  id='outlined-required'
-                  label='Input directory'
-                  style={{ margin: '0 10px 0 10px' }}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position='start'>
-                        sda://
-                      </InputAdornment>
-                    ),
-                  }}
-                  // value={workflow.input_dir}
-                  onChange={(event) =>
-                    handleDirInputChange(event, index, 'input_dir')
-                  }
-                />
-                <TextField
-                  required
-                  id='outlined-required'
-                  label='Output directory'
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position='start'>
-                        s3://inbox/
-                      </InputAdornment>
-                    ),
-                  }}
-                  // value={workflow.output_dir}
-                  onChange={(event) =>
-                    handleDirInputChange(event, index, 'output_dir')
-                  }
-                />
+                <Grid container spacing={2}>
+                  <Grid item xs={3}>
+                    <TextField
+                      required
+                      fullWidth
+                      id='outlined-required'
+                      label='Input directory'
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position='start'>
+                            sda://
+                          </InputAdornment>
+                        ),
+                      }}
+                      // value={workflow.input_dir}
+                      onChange={(event) =>
+                        handleDirInputChange(event, index, 'input_dir')
+                      }
+                    />
+                  </Grid>
+                  <Grid item xs={3}>
+                  <TextField
+                    required
+                    fullWidth
+                    id='outlined-required'
+                    label='Output directory'
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position='start'>
+                          s3://inbox/
+                        </InputAdornment>
+                      ),
+                    }}
+                    // value={workflow.output_dir}
+                    onChange={(event) =>
+                      handleDirInputChange(event, index, 'output_dir')
+                    }
+                  />
+                  </Grid>
+                  <Grid item xs={1}>
+                    <Button 
+                      fullWidth
+                      style={{ height: '100%' }}
+                      variant='outlined'
+                      onClick={() => handleRunWorkflow(workflow)}>
+                      <span className='text-lg'>RUN</span>
+                    </Button>
+                  </Grid>
+                </Grid>
                 <div className='font-mono text-sm mt-4'>
                   <CodeBlock
                     text={workflow.definition}
@@ -119,11 +135,6 @@ const HomePage = () => {
                   />
                 </div>
               </AccordionDetails>
-              <AccordionActions>
-                <Button onClick={() => handleRunWorkflow(workflow)}>
-                  <span className='text-lg'>RUN</span>
-                </Button>
-              </AccordionActions>
             </Accordion>
           ))}
       </div>
