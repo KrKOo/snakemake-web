@@ -85,7 +85,7 @@ const HomePage = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position='start'>
-                        s3://root/
+                        sda://
                       </InputAdornment>
                     ),
                   }}
@@ -101,7 +101,7 @@ const HomePage = () => {
                   InputProps={{
                     startAdornment: (
                       <InputAdornment position='start'>
-                        s3://root/
+                        s3://inbox/
                       </InputAdornment>
                     ),
                   }}
