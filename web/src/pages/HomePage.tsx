@@ -6,6 +6,7 @@ import {
   InputAdornment,
   TextField,
   Grid,
+  Alert,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import api from '../utils/api';
@@ -20,6 +21,7 @@ interface WorkflowDefinition {
   definition: string;
   input_dir?: string;
   output_dir?: string;
+  alert?: React.ReactNode;
 }
 
 const HomePage = () => {
@@ -38,13 +40,25 @@ const HomePage = () => {
     })();
   }, []);
 
-  const handleRunWorkflow = async (workflow: WorkflowDefinition) => {
+  const setWorkflowAlert = (id: number, alert: React.ReactNode) => {
+    const newWorkflows = [...workflows];
+    newWorkflows[id].alert = alert;
+    setWorkflows(newWorkflows);
+  };
+
+  const handleRunWorkflow = async (workflow: WorkflowDefinition, id: number) => {
+    if (!workflow.input_dir || !workflow.output_dir) {
+      setWorkflowAlert(id, <Alert severity="error">Input and output directory fields are required.</Alert>);
+      return;
+    }
+
     const res = await api.post('/run', {
       id: workflow.id,
       input_dir: workflow.input_dir,
       output_dir: workflow.output_dir,
     });
     if (res.status == 200) {
+      setWorkflowAlert(id, null)
       navigate(`/workflow/${res.data.workflow_id}`);
     } else {
       console.error('Failed to run workflow');
@@ -77,6 +91,7 @@ const HomePage = () => {
                 {workflow.name}
               </AccordionSummary>
               <AccordionDetails>
+                {workflow.alert && <div className='pb-3 w-full'>{workflow.alert}</div>}
                 <Grid container spacing={2}>
                   <Grid item xs={3}>
                     <TextField
@@ -121,7 +136,7 @@ const HomePage = () => {
                       fullWidth
                       style={{ height: '100%' }}
                       variant='outlined'
-                      onClick={() => handleRunWorkflow(workflow)}>
+                      onClick={() => handleRunWorkflow(workflow, index)}>
                       <span className='text-lg'>RUN</span>
                     </Button>
                   </Grid>
