@@ -1,32 +1,40 @@
+from functools import wraps
 import os
 import time
 import uuid
-from functools import wraps
-from pathlib import Path
-
 import requests
+from pathlib import Path
 from celery.contrib.abortable import AbortableAsyncResult
-from flask import current_app as app
 
+from .auth import AccessToken
 from .models import Workflow as WorkflowModel
 from .tasks import run_workflow
 from .workflow_definition.manager import get_workflow_definition_by_id
-from .auth import AccessToken
 
 
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
+
 
 class WorkflowMultipleRuns(Exception):
     """Raised when trying to run a workflow that was already run"""
 
 
 class Workflow:
-    def __init__(self, id: str = ""):
+    def __init__(
+        self,
+        id: str = None,
+        log_dir: str = None,
+        tes_url: str = None,
+        tes_auth: requests.auth.HTTPBasicAuth = None,
+    ):
         self.id = id
+        self.log_dir = log_dir
+        self.tes_url = tes_url
+        self.tes_auth = tes_auth
+
         self.was_run = self.exists()
 
-    @staticmethod
     def ensure_was_run(f):
         @wraps(f)
         def decorated(self, *args, **kwargs):
@@ -54,16 +62,12 @@ class Workflow:
 
         log_file_path = Path(
             os.path.join(
-                app.config["LOG_DIR"],
-                username,
-                f"{int(time.time() * 1000)}_{self.id}.txt",
+                self.log_dir, username, f"{int(time.time() * 1000)}_{self.id}.txt"
             )
         )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         workflow_folder = get_workflow_definition_by_id(workflow_definition_id).dir
-
-        result_bucket = token.userinfo.get("sub").replace("@", "_")
 
         task_state = run_workflow.delay(
             workflow_config,
@@ -72,7 +76,7 @@ class Workflow:
             workflow_folder,
             input_dir,
             output_dir,
-            result_bucket,
+            token.userinfo.get("sub").replace("@", "_"),
             username,
             token.value,
         )
@@ -136,10 +140,7 @@ class Workflow:
         if not list_view:
             request_url += "?view=FULL"
 
-        tes_auth = requests.auth.HTTPBasicAuth(
-            app.config["TES_BASIC_AUTH_USER"], app.config["TES_BASIC_AUTH_PASSWORD"]
-        )
-        response = requests.get(request_url, auth=tes_auth)
+        response = requests.get(request_url, auth=self.tes_auth)
 
         if response.status_code == 200:
             data = response.json()

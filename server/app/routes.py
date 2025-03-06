@@ -1,4 +1,5 @@
 from flask import Blueprint, current_app, request
+import requests
 
 from .auth import AccessToken
 from .utils import app_to_workflow_config, is_valid_uuid
@@ -35,7 +36,14 @@ def run_workflow(token: AccessToken, username: str):
     output_dir = data.get("output_dir")
 
     workflow_config = app_to_workflow_config(current_app)
-    workflow = Workflow()
+    workflow = Workflow(
+        log_dir=current_app.config["LOG_DIR"],
+        tes_url=current_app.config["TES_URL"],
+        tes_auth=requests.auth.HTTPBasicAuth(
+            username=current_app.config["TES_BASIC_AUTH_USER"],
+            password=current_app.config["TES_BASIC_AUTH_PASSWORD"],
+        ),
+    )
     workflow_id = workflow.run(
         workflow_config,
         workflow_definition_id,
@@ -60,7 +68,15 @@ def cancel_workflow(username, workflow_id):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
-    workflow = Workflow(id=workflow_id)
+    workflow = Workflow(
+        id=workflow_id,
+        log_dir=current_app.config["LOG_DIR"],
+        tes_url=current_app.config["TES_URL"],
+        tes_auth=requests.auth.HTTPBasicAuth(
+            username=current_app.config["TES_BASIC_AUTH_USER"],
+            password=current_app.config["TES_BASIC_AUTH_PASSWORD"],
+        ),
+    )
     
     if not workflow.exists() or not workflow.is_owned_by_user(username):
         return "Workflow not found", 404
@@ -76,7 +92,15 @@ def worflow_jobs(username, workflow_id):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
-    workflow = Workflow(id=workflow_id)
+    workflow = Workflow(
+        id=workflow_id,
+        log_dir=current_app.config["LOG_DIR"],
+        tes_url=current_app.config["TES_URL"],
+        tes_auth=requests.auth.HTTPBasicAuth(
+            username=current_app.config["TES_BASIC_AUTH_USER"],
+            password=current_app.config["TES_BASIC_AUTH_PASSWORD"],
+        ),
+    )
 
     if not workflow.exists() or not workflow.is_owned_by_user(username):
         return "Workflow not found", 404
