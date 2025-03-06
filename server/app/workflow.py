@@ -26,12 +26,12 @@ class Workflow:
         id: str = None,
         log_dir: str = None,
         tes_url: str = None,
-        tes_auth: requests.auth.HTTPBasicAuth = None,
+        token: AccessToken = None,
     ):
         self.id = id
         self.log_dir = log_dir
         self.tes_url = tes_url
-        self.tes_auth = tes_auth
+        self.token = token
 
         self.was_run = self.exists()
 
@@ -52,7 +52,6 @@ class Workflow:
         input_dir,
         output_dir,
         username,
-        token: AccessToken,
     ):
         if self.was_run:
             raise WorkflowMultipleRuns
@@ -76,9 +75,9 @@ class Workflow:
             workflow_folder,
             input_dir,
             output_dir,
-            token.userinfo.get("sub").replace("@", "_"),
+            self.token.userinfo.get("sub").replace("@", "_"),
             username,
-            token.value,
+            self.token.value,
         )
 
         workflow = WorkflowModel(
@@ -140,7 +139,7 @@ class Workflow:
         if not list_view:
             request_url += "?view=FULL"
 
-        response = requests.get(request_url, auth=self.tes_auth)
+        response = requests.get(request_url, headers={"Authorization": f"Bearer {self.token.value}"})
 
         if response.status_code == 200:
             data = response.json()

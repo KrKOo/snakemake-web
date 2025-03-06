@@ -39,18 +39,16 @@ def run_workflow(token: AccessToken, username: str):
     workflow = Workflow(
         log_dir=current_app.config["LOG_DIR"],
         tes_url=current_app.config["TES_URL"],
-        tes_auth=requests.auth.HTTPBasicAuth(
-            username=current_app.config["TES_BASIC_AUTH_USER"],
-            password=current_app.config["TES_BASIC_AUTH_PASSWORD"],
-        ),
+        token=token
     )
+
     workflow_id = workflow.run(
-        workflow_config,
-        workflow_definition_id,
-        input_dir,
-        output_dir,
-        username,
-        token,
+        workflow_config=workflow_config,
+        workflow_definition_id=workflow_definition_id,
+        input_dir=input_dir,
+        output_dir=output_dir,
+        username=username,
+        token=token,
     )
     return {"workflow_id": workflow_id}, 200
 
@@ -64,7 +62,8 @@ def workflow(username):
 
 @api.route("/workflow/<workflow_id>", methods=["DELETE"])
 @with_user
-def cancel_workflow(username, workflow_id):
+@with_access_token
+def cancel_workflow(token: AccessToken, username: str, workflow_id: str):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
@@ -72,10 +71,7 @@ def cancel_workflow(username, workflow_id):
         id=workflow_id,
         log_dir=current_app.config["LOG_DIR"],
         tes_url=current_app.config["TES_URL"],
-        tes_auth=requests.auth.HTTPBasicAuth(
-            username=current_app.config["TES_BASIC_AUTH_USER"],
-            password=current_app.config["TES_BASIC_AUTH_PASSWORD"],
-        ),
+        token=token
     )
     
     if not workflow.exists() or not workflow.is_owned_by_user(username):
@@ -88,7 +84,8 @@ def cancel_workflow(username, workflow_id):
 
 @api.route("/workflow/<workflow_id>", methods=["GET"])
 @with_user
-def worflow_jobs(username, workflow_id):
+@with_access_token
+def worflow_jobs(token:AccessToken, username: str, workflow_id: str):
     if not is_valid_uuid(workflow_id):
         return "Invalid workflow ID", 400
 
@@ -96,10 +93,7 @@ def worflow_jobs(username, workflow_id):
         id=workflow_id,
         log_dir=current_app.config["LOG_DIR"],
         tes_url=current_app.config["TES_URL"],
-        tes_auth=requests.auth.HTTPBasicAuth(
-            username=current_app.config["TES_BASIC_AUTH_USER"],
-            password=current_app.config["TES_BASIC_AUTH_PASSWORD"],
-        ),
+        token=token
     )
 
     if not workflow.exists() or not workflow.is_owned_by_user(username):
