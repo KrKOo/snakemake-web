@@ -1,5 +1,4 @@
 from flask import Blueprint, current_app, request
-import requests
 
 from .auth import AccessToken
 from .utils import app_to_workflow_config, is_valid_uuid
@@ -37,8 +36,8 @@ def run_workflow(token: AccessToken, username: str):
 
     workflow_config = app_to_workflow_config(current_app)
     workflow = Workflow(
-        log_dir=current_app.config["LOG_DIR"],
-        tes_url=current_app.config["TES_URL"],
+        log_dir=current_app.config["APP_LOG_DIR"],
+        tes_url=current_app.config["SNAKEMAKE_TES_URL"],
         token=token
     )
 
@@ -47,8 +46,7 @@ def run_workflow(token: AccessToken, username: str):
         workflow_definition_id=workflow_definition_id,
         input_dir=input_dir,
         output_dir=output_dir,
-        username=username,
-        token=token,
+        username=username
     )
     return {"workflow_id": workflow_id}, 200
 
@@ -69,8 +67,8 @@ def cancel_workflow(token: AccessToken, username: str, workflow_id: str):
 
     workflow = Workflow(
         id=workflow_id,
-        log_dir=current_app.config["LOG_DIR"],
-        tes_url=current_app.config["TES_URL"],
+        log_dir=current_app.config["APP_LOG_DIR"],
+        tes_url=current_app.config["SNAKEMAKE_TES_URL"],
         token=token
     )
     
@@ -91,8 +89,8 @@ def worflow_jobs(token:AccessToken, username: str, workflow_id: str):
 
     workflow = Workflow(
         id=workflow_id,
-        log_dir=current_app.config["LOG_DIR"],
-        tes_url=current_app.config["TES_URL"],
+        log_dir=current_app.config["APP_LOG_DIR"],
+        tes_url=current_app.config["SNAKEMAKE_TES_URL"],
         token=token
     )
 

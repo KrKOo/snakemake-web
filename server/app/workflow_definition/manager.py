@@ -30,8 +30,8 @@ def get_workflow_definition_by_id(
 
 def get_workflow_definition_dirs() -> list[str]:
     workflow_definition_dirs = [
-        os.path.join(app.config["WORKFLOW_DEFINITION_DIR"], d)
-        for d in os.listdir(app.config["WORKFLOW_DEFINITION_DIR"])
+        os.path.join(app.config["APP_WORKFLOW_DEFINITION_DIR"], d)
+        for d in os.listdir(app.config["APP_WORKFLOW_DEFINITION_DIR"])
         if not d.startswith(".")
     ]
 

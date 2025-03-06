@@ -38,9 +38,9 @@ def with_access_token(f):
             }, 401
 
         auth_client = AuthClient(
-            app.config["OIDC_URL"],
-            app.config["OIDC_CLIENT_ID"],
-            app.config["OIDC_CLIENT_SECRET"],
+            app.config["APP_OIDC_URL"],
+            app.config["APP_OIDC_CLIENT_ID"],
+            app.config["APP_OIDC_CLIENT_SECRET"],
         )
         token = AccessToken(token, auth_client)
 
@@ -60,9 +60,9 @@ def with_updated_workflow_definitions(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         pull_workflow_definitions(
-            app.config["WORKFLOW_DEFINITION_DIR"],
-            app.config["WORKFLOW_DEFINITION_REPO"],
-            app.config["WORKFLOW_DEFINITION_BRANCH"],
+            app.config["APP_WORKFLOW_DEFINITION_DIR"],
+            app.config["APP_WORKFLOW_DEFINITION_REPO"],
+            app.config["APP_WORKFLOW_DEFINITION_BRANCH"],
         )
         return f(*args, **kwargs)
 
