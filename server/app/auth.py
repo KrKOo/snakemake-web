@@ -34,18 +34,18 @@ class Visa:
         self.issued_by: str = ""
         self._parse_visa()
 
-    def _parse_visa(self):
+    def _parse_visa(self) -> None:
         decoded: VisaJWTPayload = jwt.decode(
             self.token, options={"verify_signature": False}
         )
         data = decoded["ga4gh_visa_v1"]
 
         # TODO: Check if the visa is expired
-        self.type = data.get("type")
-        self.value = data.get("value")
-        self.asserted = int(data.get("asserted")) if data.get("asserted") else None
-        self.source = data.get("source")
-        self.issued_by = data.get("by")
+        self.type = data["type"]
+        self.value = data["value"]
+        self.asserted = int(data["asserted"]) if data["asserted"] else None
+        self.source = data["source"]
+        self.issued_by = data["by"]
 
     @override
     def __repr__(self):
@@ -73,7 +73,7 @@ class AuthClient:
         self.userinfo_url: str = ""
         self._get_urls()
 
-    def _get_urls(self):
+    def _get_urls(self) -> None:
         try:
             response = requests.get(self.oidc_config_url)
             data: OIDCConfig = response.json()
@@ -87,6 +87,7 @@ class AuthClient:
 class UserInfo(TypedDict):
     sub: str
     ga4gh_passport_v1: list[str]
+    eduperson_entitlement: list[str]
 
 
 class TokenInfo(TypedDict):
@@ -165,7 +166,7 @@ class AccessToken:
 
         return data
 
-    def get_data(self):
+    def get_data(self) -> TokenJWTPayload | None:
         jwks_client = jwt.PyJWKClient(self.auth_client.jwks_url)
         header = jwt.get_unverified_header(self.value)
 

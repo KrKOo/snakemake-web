@@ -17,7 +17,6 @@ class WorkflowConfig(TypedDict):
     oidc_audience: str
     container_image: str
     jobs: int
-    result_bucket: str
     inbox_host: str
     download_host: str
     tmp_dir: str

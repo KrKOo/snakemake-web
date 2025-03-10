@@ -12,7 +12,7 @@ def app():
 
 
 @pytest.fixture
-def entitlements():
+def entitlements() -> list[Entitlement]:
     res: list[Entitlement] = [
         {
             "prefix": r"urn:geant:lifescience-ri\.eu:",

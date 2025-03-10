@@ -23,10 +23,10 @@ class WorkflowMultipleRuns(Exception):
 class Workflow:
     def __init__(
         self,
-        id: str = None,
-        log_dir: str = None,
-        tes_url: str = None,
-        token: AccessToken = None,
+        log_dir: str,
+        tes_url: str,
+        token: AccessToken,
+        id: str | None = None,
     ):
         self.id = id
         self.log_dir = log_dir
@@ -35,6 +35,7 @@ class Workflow:
 
         self.was_run = self.exists()
 
+    @staticmethod
     def ensure_was_run(f):
         @wraps(f)
         def decorated(self, *args, **kwargs):
@@ -130,6 +131,7 @@ class Workflow:
     @ensure_was_run
     def get_jobs(self) -> list[str]:
         workflow = WorkflowModel.objects(id=self.id).only("job_ids").first()
+
         if not workflow:
             return []
         return workflow.job_ids

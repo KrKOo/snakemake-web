@@ -14,7 +14,7 @@ class WorkflowDefinitionMetadata:
         dir: str,
         id: str,
         name: str,
-        allowed_entitlements: list[Entitlement] = None,
+        allowed_entitlements: list[Entitlement],
     ):
         self.dir = dir
         self.id = id

@@ -107,17 +107,17 @@ def run_workflow(
     token: str,
 ):
     pull_workflow_definitions(
-        workflow_config.get("workflow_definition_dir"),
-        workflow_config.get("workflow_definition_repo"),
-        workflow_config.get("workflow_definition_branch"),
+        workflow_config["workflow_definition_dir"],
+        workflow_config["workflow_definition_repo"],
+        workflow_config["workflow_definition_branch"],
     )
 
     current_workflow_dir = os.path.join(
-        workflow_config.get("workflow_dir"), workflow_id
+        workflow_config["workflow_dir"], workflow_id
     )
 
     shutil.copytree(
-        os.path.join(workflow_config.get("workflow_definition_dir"), workflow_folder),
+        os.path.join(workflow_config["workflow_definition_dir"], workflow_folder),
         current_workflow_dir,
     )
 

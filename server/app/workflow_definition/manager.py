@@ -22,10 +22,12 @@ def get_workflow_definitions() -> list[WorkflowDefinitionMetadata]:
 @with_updated_workflow_definitions
 def get_workflow_definition_by_id(
     workflow_definition_id: str,
-) -> WorkflowDefinitionMetadata:
+) -> WorkflowDefinitionMetadata | None:
     for workflow_definition in get_workflow_definitions():
         if workflow_definition.id == workflow_definition_id:
             return workflow_definition
+    
+    return None
 
 
 def get_workflow_definition_dirs() -> list[str]:
@@ -46,13 +48,14 @@ def get_workflow_definition_list() -> list[WorkflowDefinitionListItem]:
     res = []
 
     for workflow_definition in get_workflow_definitions():
-        workflow_res: WorkflowDefinitionListItem = {}
-        workflow_res["id"] = workflow_definition.id
-        workflow_res["name"] = workflow_definition.name
-
         with open(os.path.join(str(workflow_definition.dir), "Snakefile")) as f:
-            workflow_res["definition"] = f.read()
+            definition = f.read()
 
+        workflow_res = WorkflowDefinitionListItem(
+            id=workflow_definition.id,
+            name=workflow_definition.name,
+            definition=definition,
+        )
         res.append(workflow_res)
 
     return res

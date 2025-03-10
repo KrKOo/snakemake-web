@@ -66,10 +66,10 @@ def cancel_workflow(token: AccessToken, username: str, workflow_id: str):
         return "Invalid workflow ID", 400
 
     workflow = Workflow(
-        id=workflow_id,
         log_dir=current_app.config["APP_LOG_DIR"],
         tes_url=current_app.config["SNAKEMAKE_TES_URL"],
-        token=token
+        token=token,
+        id=workflow_id
     )
     
     if not workflow.exists() or not workflow.is_owned_by_user(username):
@@ -88,10 +88,10 @@ def worflow_jobs(token:AccessToken, username: str, workflow_id: str):
         return "Invalid workflow ID", 400
 
     workflow = Workflow(
-        id=workflow_id,
         log_dir=current_app.config["APP_LOG_DIR"],
         tes_url=current_app.config["SNAKEMAKE_TES_URL"],
-        token=token
+        token=token,
+        id=workflow_id
     )
 
     if not workflow.exists() or not workflow.is_owned_by_user(username):
