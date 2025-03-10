@@ -14,15 +14,18 @@ class WorkflowDefinitionMetadata:
         dir: str,
         id: str,
         name: str,
-        allowed_entitlements: list[Entitlement],
+        allowed_entitlements: list[Entitlement] | None = None,
     ):
         self.dir = dir
         self.id = id
         self.name = name
         self.allowed_entitlements = allowed_entitlements
-        self.allowed_entitlement_patterns = self._get_allowed_entitlement_patterns(
-            allowed_entitlements
-        )
+        if allowed_entitlements is None:
+            self.allowed_entitlement_patterns = []
+        else:
+            self.allowed_entitlement_patterns = self._get_allowed_entitlement_patterns(
+                allowed_entitlements
+            )
 
     def __repr__(self):
         return f"WorkflowDefinition({self.dir}, {self.id}, {self.name}, {self.allowed_entitlement_patterns})"

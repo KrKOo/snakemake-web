@@ -1,11 +1,13 @@
 import os
-import secrets
 
 from celery import Celery
-from flask import Flask, send_from_directory
+from fastapi import FastAPI
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from mongoengine import connect as mongo_connect
 
-from .config import YAMLConfig
+from .config import config
+from .routes import api_router
 
 
 def create_app():
@@ -16,40 +18,26 @@ def create_celery():
     return entrypoint("celery")
 
 
-def init_celery_app(app: Flask) -> Celery:
-    celery_app = Celery(app.name)
+def init_celery_app() -> Celery:
+    celery_app = Celery(__name__)
     celery_app.config_from_object(
         dict(
-            broker_url=app.config["CELERY_BROKER_URL"],
-            result_backend=app.config["CELERY_RESULT_BACKEND"],
+            broker_url=config.celery.broker_url,
+            result_backend=config.celery.result_backend,
         )
     )
     celery_app.set_default()
-    app.extensions["celery"] = celery_app
     return celery_app
 
 
 def entrypoint(mode="app"):
-    app = Flask(__name__)
+    app = FastAPI()
 
-    if os.environ.get("CONFIG_FILE"):
-        config = YAMLConfig(os.environ.get("CONFIG_FILE"))
-    else:
-        config = YAMLConfig("../config.yaml")
-
-    print(config.to_dict())
-    app.config.from_mapping(config.to_dict())
-
-    if app.config.get("APP_SECRET_KEY"):
-        app.secret_key = app.config["APP_SECRET_KEY"]
-    else:
-        app.secret_key = secrets.token_urlsafe(16)
-
-    mongo_connect(host=app.config["MONGO_MONGODB_URI"], uuidRepresentation="standard")
+    mongo_connect(host=config.mongo.mongodb_uri, uuidRepresentation="standard")
 
     register_routes(app)
 
-    celery_app = init_celery_app(app)
+    celery_app = init_celery_app()
     if mode == "celery":
         return celery_app
     if mode == "app":
@@ -57,16 +45,12 @@ def entrypoint(mode="app"):
 
 
 def register_routes(app):
-    with app.app_context():
-        from . import routes
+    app.include_router(api_router)
 
-        app.register_blueprint(routes.api, url_prefix="/api")
+    app.mount("/assets", StaticFiles(directory=os.path.join(config.app.web_dir, "assets")), name="static")
 
-        @app.route("/", defaults={"path": ""})
-        @app.route("/<path:path>")
-        def serve(path):
-            web_dir = app.config["APP_WEB_DIR"]
-            if path != "" and os.path.exists(os.path.join(web_dir, path)):
-                return send_from_directory(web_dir, path)
-
-            return send_from_directory(web_dir, "index.html")
+    @app.get("/")
+    @app.get("/{full_path:path}")
+    async def serve_react_app(full_path: str):
+        file_path = os.path.join(config.app.web_dir, "index.html")
+        return FileResponse(file_path)

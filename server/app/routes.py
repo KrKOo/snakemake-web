@@ -1,6 +1,7 @@
-from flask import Blueprint, current_app, request
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 
 from .auth import AccessToken
+from .config import config
 from .utils import app_to_workflow_config, is_valid_uuid
 from .workflow import Workflow
 from .workflow_definition.manager import (
@@ -8,36 +9,33 @@ from .workflow_definition.manager import (
     get_workflow_definition_list,
 )
 from .workflow_handler import get_workflows_by_user
-from .wrappers import with_access_token, with_user
+from .api_dependencies import get_authenticated_user, get_valid_access_token
 
-api = Blueprint("api", __name__)
+api_router = APIRouter(prefix="/api")
 
-
-@api.route("/run", methods=["POST"])
-@with_user
-@with_access_token
-def run_workflow(token: AccessToken, username: str):
-    data = request.json
+@api_router.post("/run")
+async def run_workflow(request: Request, username: str = Depends(get_authenticated_user), token: AccessToken = Depends(get_valid_access_token)):
+    data = await request.json()
 
     if not data:
-        return "Invalid request", 400
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid request")
 
     workflow_definition_id = data.get("id")
 
     workflow_definition = get_workflow_definition_by_id(workflow_definition_id)
     if not workflow_definition:
-        return "Workflow definition not found", 404
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow definition not found")
 
     if token.is_authorized_for_workflow(workflow_definition):
-        return "Unauthorized", 401
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Unauthorized")
 
     input_dir = data.get("input_dir")
     output_dir = data.get("output_dir")
 
-    workflow_config = app_to_workflow_config(current_app)
+    workflow_config = app_to_workflow_config()
     workflow = Workflow(
-        log_dir=current_app.config["APP_LOG_DIR"],
-        tes_url=current_app.config["SNAKEMAKE_TES_URL"],
+        log_dir=config.app.log_dir,
+        tes_url=config.snakemake.tes_url,
         token=token
     )
 
@@ -48,62 +46,56 @@ def run_workflow(token: AccessToken, username: str):
         output_dir=output_dir,
         username=username
     )
-    return {"workflow_id": workflow_id}, 200
+    return {"workflow_id": workflow_id}
 
 
-@api.route("/workflow", methods=["GET"])
-@with_user
-def workflow(username):
+@api_router.get("/workflow")
+async def get_workflows(username: str = Depends(get_authenticated_user)):
     workflows = get_workflows_by_user(username)
-    return workflows, 200
+    return workflows
 
 
-@api.route("/workflow/<workflow_id>", methods=["DELETE"])
-@with_user
-@with_access_token
-def cancel_workflow(token: AccessToken, username: str, workflow_id: str):
+@api_router.delete("/workflow/{workflow_id}")
+async def cancel_workflow(workflow_id: str, username: str = Depends(get_authenticated_user), token: AccessToken = Depends(get_valid_access_token)):
     if not is_valid_uuid(workflow_id):
-        return "Invalid workflow ID", 400
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid workflow ID")
 
     workflow = Workflow(
-        log_dir=current_app.config["APP_LOG_DIR"],
-        tes_url=current_app.config["SNAKEMAKE_TES_URL"],
+        log_dir=config.app.log_dir,
+        tes_url=config.snakemake.tes_url,
         token=token,
         id=workflow_id
     )
     
     if not workflow.exists() or not workflow.is_owned_by_user(username):
-        return "Workflow not found", 404
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
 
     workflow.cancel()
 
-    return "Workflow canceled", 200
+    return {"message": "Workflow canceled"}
 
-
-@api.route("/workflow/<workflow_id>", methods=["GET"])
-@with_user
-@with_access_token
-def worflow_jobs(token:AccessToken, username: str, workflow_id: str):
+@api_router.get("/workflow/{workflow_id}")
+async def worflow_detail(workflow_id: str, username: str = Depends(get_authenticated_user), token: AccessToken = Depends(get_valid_access_token)):
     if not is_valid_uuid(workflow_id):
-        return "Invalid workflow ID", 400
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid workflow ID")
 
     workflow = Workflow(
-        log_dir=current_app.config["APP_LOG_DIR"],
-        tes_url=current_app.config["SNAKEMAKE_TES_URL"],
+        log_dir=config.app.log_dir,
+        tes_url=config.snakemake.tes_url,
         token=token,
         id=workflow_id
     )
 
     if not workflow.exists() or not workflow.is_owned_by_user(username):
-        return "Workflow not found", 404
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
 
     workflow_detail = workflow.get_detail()
 
-    return workflow_detail, 200
+    return workflow_detail
 
 
-@api.route("/workflow_definition")
+@api_router.get("/workflow_definition")
 def workflow_definition():
     workflow_definitions = get_workflow_definition_list()
 
-    return workflow_definitions, 200
+    return workflow_definitions

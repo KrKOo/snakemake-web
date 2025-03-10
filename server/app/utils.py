@@ -1,9 +1,9 @@
 import os
 import uuid
 
-from flask import Flask
 from git import Repo
 
+from .config import config
 from .workflow_config import WorkflowConfig
 
 
@@ -29,24 +29,24 @@ def pull_workflow_definitions(
             repo.git.checkout(branch)
 
 
-def app_to_workflow_config(app: Flask):
+def app_to_workflow_config():
     return WorkflowConfig(
-        workflow_dir=app.config["APP_WORKFLOW_DIR"],
-        workflow_definition_dir=app.config["APP_WORKFLOW_DEFINITION_DIR"],
-        workflow_definition_branch=app.config["APP_WORKFLOW_DEFINITION_BRANCH"],
-        workflow_definition_repo=app.config["APP_WORKFLOW_DEFINITION_REPO"],
-        default_storage_prefix=app.config["SNAKEMAKE_DEFAULT_STORAGE_PREFIX"],
-        storage_s3_endpoint_url=app.config["SNAKEMAKE_STORAGE_S3_ENDPOINT_URL"],
-        storage_s3_access_key=app.config["SNAKEMAKE_STORAGE_S3_ACCESS_KEY"],
-        storage_s3_secret_key=app.config["SNAKEMAKE_STORAGE_S3_SECRET_KEY"],
-        auth_tes_url=app.config["SNAKEMAKE_TES_URL"],
-        oidc_client_id=app.config["APP_OIDC_CLIENT_ID"],
-        oidc_client_secret=app.config["APP_OIDC_CLIENT_SECRET"],
-        oidc_url=app.config["APP_OIDC_URL"],
-        oidc_audience=app.config["APP_OIDC_AUDIENCE"],
-        container_image=app.config["SNAKEMAKE_SNAKEMAKE_CONTAINER_IMAGE"],
-        jobs=app.config["SNAKEMAKE_SNAKEMAKE_JOBS"],
-        inbox_host=app.config["SNAKEMAKE_INBOX_HOST"],
-        download_host=app.config["SNAKEMAKE_DOWNLOAD_HOST"],
-        tmp_dir=app.config["SNAKEMAKE_TMP_DIR"],
+        workflow_dir=config.app.workflow_dir,
+        workflow_definition_dir=config.app.workflow_definition_dir,
+        workflow_definition_branch=config.app.workflow_definition_branch,
+        workflow_definition_repo=config.app.workflow_definition_repo,
+        default_storage_prefix=config.snakemake.default_storage_prefix,
+        storage_s3_endpoint_url=config.snakemake.storage_s3_endpoint_url,
+        storage_s3_access_key=config.snakemake.storage_s3_access_key,
+        storage_s3_secret_key=config.snakemake.storage_s3_secret_key,
+        auth_tes_url=config.snakemake.tes_url,
+        oidc_client_id=config.app.oidc_client_id,
+        oidc_client_secret=config.app.oidc_client_secret,
+        oidc_url=config.app.oidc_url,
+        oidc_audience=config.app.oidc_audience,
+        container_image=config.snakemake.snakemake_container_image,
+        jobs=config.snakemake.snakemake_jobs,
+        inbox_host=config.snakemake.inbox_host,
+        download_host=config.snakemake.download_host,
+        tmp_dir=config.snakemake.tmp_dir,
     )

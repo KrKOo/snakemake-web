@@ -1,12 +1,10 @@
 import json
 import os
 
-from flask import current_app as app
-
 from app.wrappers import with_updated_workflow_definitions
 
 from . import WorkflowDefinitionListItem, WorkflowDefinitionMetadata
-
+from app.config import config
 
 def get_workflow_definition(dir: str) -> WorkflowDefinitionMetadata:
     with open(os.path.join(dir, "metadata.json")) as json_data:
@@ -32,8 +30,8 @@ def get_workflow_definition_by_id(
 
 def get_workflow_definition_dirs() -> list[str]:
     workflow_definition_dirs = [
-        os.path.join(app.config["APP_WORKFLOW_DEFINITION_DIR"], d)
-        for d in os.listdir(app.config["APP_WORKFLOW_DEFINITION_DIR"])
+        os.path.join(config.app.workflow_definition_dir, d)
+        for d in os.listdir(config.app.workflow_definition_dir)
         if not d.startswith(".")
     ]
 

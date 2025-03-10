@@ -1,8 +1,10 @@
+import os
+from typing import Tuple, Type
 from pydantic import BaseModel
+from pydantic_settings import BaseSettings, PydanticBaseSettingsSource, SettingsConfigDict, YamlConfigSettingsSource
 
 
 class AppConfig(BaseModel):
-    secret_key: str
     log_dir: str
     web_dir: str
     workflow_dir: str
@@ -37,8 +39,24 @@ class MongoConfig(BaseModel):
     mongodb_uri: str
 
 
-class Config(BaseModel):
+class Config(BaseSettings):
+    model_config = SettingsConfigDict(yaml_file=os.environ.get("CONFIG_FILE", "../config.yaml"))
+
     app: AppConfig
     snakemake: SnakemakeConfig
     celery: CeleryConfig
     mongo: MongoConfig
+
+    @classmethod
+    def settings_customise_sources(
+        cls,
+        settings_cls: Type[BaseSettings],
+        init_settings: PydanticBaseSettingsSource,
+        env_settings: PydanticBaseSettingsSource,
+        dotenv_settings: PydanticBaseSettingsSource,
+        file_secret_settings: PydanticBaseSettingsSource,
+    ) -> Tuple[PydanticBaseSettingsSource, ...]:
+        return (env_settings, dotenv_settings, YamlConfigSettingsSource(settings_cls),)
+    
+
+config = Config() # type: ignore
