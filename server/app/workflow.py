@@ -10,7 +10,7 @@ from .auth import AccessToken
 from .models import Workflow as WorkflowModel
 from .tasks import run_workflow
 from .workflow_definition.manager import get_workflow_definition_by_id
-
+from .schemas import WorkflowDetail, Job
 
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
@@ -112,20 +112,32 @@ class Workflow:
     def get_detail(self):
         workflow_object = WorkflowModel.objects.get(id=self.id)
 
-        workflow_detail = {
-            "id": workflow_object.id,
-            "created_at": workflow_object.created_at.timestamp() * 1000,
-            "state": workflow_object.state.value,
-            "jobs": self.get_jobs_info(),
-        }
-        return workflow_detail
+        # workflow_detail = {
+        #     "id": workflow_object.id,
+        #     "created_at": workflow_object.created_at.timestamp() * 1000,
+        #     "state": workflow_object.state.value,
+        #     "jobs": self.get_jobs_info(),
+        # }
+
+        return WorkflowDetail(
+            id=workflow_object.id,
+            created_at=workflow_object.created_at,
+            state=workflow_object.state,
+            # workflow_definition_id=workflow_object.workflow_definition_id,
+            # input_dir=workflow_object.input_dir,
+            # output_dir=workflow_object.output_dir,
+            jobs=self.get_jobs_info(),
+        )
 
     @ensure_was_run
-    def get_jobs_info(self, list_view=False):
+    def get_jobs_info(self, list_view=False) -> list[Job]:
         job_ids = self.get_jobs()
-        jobs_info = []
+        jobs_info: list[Job] = []
         for job_id in job_ids:
-            jobs_info.append(self._get_job_info(job_id, list_view))
+            job_info = self._get_job_info(job_id, list_view)
+            if job_info:
+                jobs_info.append(job_info)
+
         return jobs_info
 
     @ensure_was_run
@@ -136,7 +148,7 @@ class Workflow:
             return []
         return workflow.job_ids
 
-    def _get_job_info(self, job_id, list_view=False):
+    def _get_job_info(self, job_id, list_view=False) -> Job | None:
         request_url = f"{self.tes_url}/v1/tasks/{job_id}"
         if not list_view:
             request_url += "?view=FULL"
@@ -158,6 +170,6 @@ class Workflow:
             except KeyError:
                 job_info["logs"] = ""
 
-            return job_info
+            return Job(**job_info)
         else:
             return None

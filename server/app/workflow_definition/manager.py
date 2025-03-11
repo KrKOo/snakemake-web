@@ -1,15 +1,18 @@
 import json
 import os
+from uuid import UUID
 
 from app.wrappers import with_updated_workflow_definitions
 
-from . import WorkflowDefinitionListItem, WorkflowDefinitionMetadata
+from . import WorkflowDefinitionMetadata
+from app.schemas.workflow import WorkflowDefinitionListItem
 from app.config import config
 
 def get_workflow_definition(dir: str) -> WorkflowDefinitionMetadata:
     with open(os.path.join(dir, "metadata.json")) as json_data:
-        metadata = json.load(json_data)
-        return WorkflowDefinitionMetadata(dir, **metadata)
+        metadata_dict = json.loads(json_data.read())
+        metadata_dict["dir"] = dir
+        return WorkflowDefinitionMetadata.model_validate(metadata_dict)
 
 
 def get_workflow_definitions() -> list[WorkflowDefinitionMetadata]:
@@ -19,7 +22,7 @@ def get_workflow_definitions() -> list[WorkflowDefinitionMetadata]:
 
 @with_updated_workflow_definitions
 def get_workflow_definition_by_id(
-    workflow_definition_id: str,
+    workflow_definition_id: UUID,
 ) -> WorkflowDefinitionMetadata | None:
     for workflow_definition in get_workflow_definitions():
         if workflow_definition.id == workflow_definition_id:

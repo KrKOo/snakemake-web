@@ -223,7 +223,7 @@ class AccessToken:
     def is_authorized_for_workflow(
         self, workflow_definition: WorkflowDefinitionMetadata
     ) -> bool:
-        if self.has_visa("ControlledAccessGrants", workflow_definition.id):
+        if self.has_visa("ControlledAccessGrants", str(workflow_definition.id)):
             return True
 
         if workflow_definition.is_entitlement_satisfied(self.get_entitlements()):

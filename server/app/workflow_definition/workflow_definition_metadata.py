@@ -1,5 +1,7 @@
 import re
+from uuid import UUID
 from typing import TypedDict
+from pydantic import BaseModel
 
 
 class Entitlement(TypedDict):
@@ -8,41 +10,27 @@ class Entitlement(TypedDict):
     suffix: str
 
 
-class WorkflowDefinitionMetadata:
-    def __init__(
-        self,
-        dir: str,
-        id: str,
-        name: str,
-        allowed_entitlements: list[Entitlement] | None = None,
-    ):
-        self.dir = dir
-        self.id = id
-        self.name = name
-        self.allowed_entitlements = allowed_entitlements
-        if allowed_entitlements is None:
-            self.allowed_entitlement_patterns = []
-        else:
-            self.allowed_entitlement_patterns = self._get_allowed_entitlement_patterns(
-                allowed_entitlements
-            )
+class WorkflowDefinitionMetadata(BaseModel):
+    dir: str
+    id: UUID
+    name: str
+    allowed_entitlements: list[Entitlement] | None = None
 
-    def __repr__(self):
-        return f"WorkflowDefinition({self.dir}, {self.id}, {self.name}, {self.allowed_entitlement_patterns})"
-
-    def _get_allowed_entitlement_patterns(
-        self, allowed_entitlements: list[Entitlement]
-    ) -> list[str]:
-        if not allowed_entitlements:
+    @property
+    def allowed_entitlement_patterns(self) -> list[str]:
+        if not self.allowed_entitlements:
             return []
 
         patterns = []
 
-        for entitlement in allowed_entitlements:
+        for entitlement in self.allowed_entitlements:
             pattern = f'^{entitlement["prefix"]}({"|".join(entitlement["values"])}){entitlement["suffix"]}$'
             patterns.append(pattern)
 
         return patterns
+
+    def __repr__(self):
+        return f"WorkflowDefinition({self.dir}, {self.id}, {self.name}, {self.allowed_entitlement_patterns})"
 
     def is_entitlement_satisfied(self, entitlements: list[str]) -> bool:
         for pattern in self.allowed_entitlement_patterns:
