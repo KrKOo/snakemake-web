@@ -11,8 +11,16 @@ async def get_authenticated_user(request: Request) -> str:
     return username
 
 async def get_valid_access_token(request: Request) -> AccessToken:
-    token_value = request.headers.get("X-Forwarded-Access-Token")
-    if not token_value:
+    authorization_header = request.headers.get("Authorization", None)
+    forwarded_token_header = request.headers.get("X-Forwarded-Access-Token", None)
+
+    if authorization_header:
+        if not authorization_header.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Invalid access token")
+        token_value = authorization_header.split(" ")[1]
+    elif forwarded_token_header:
+        token_value = forwarded_token_header
+    else:
         raise HTTPException(status_code=401, detail="No access token provided")
     auth_client = AuthClient(
 		config.app.oidc_url,

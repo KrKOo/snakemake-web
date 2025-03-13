@@ -53,13 +53,13 @@ const HomePage = () => {
     }
 
     const res = await api.post('/run', {
-      id: workflow.id,
+      workflow_definition_id: workflow.id,
       input_dir: workflow.input_dir,
       output_dir: workflow.output_dir,
     });
     if (res.status == 200) {
       setWorkflowAlert(id, null)
-      navigate(`/workflow/${res.data.workflow_id}`);
+      navigate(`/workflow/${res.data.id}`);
     } else {
       console.error('Failed to run workflow');
     }

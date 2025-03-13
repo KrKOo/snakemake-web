@@ -34,6 +34,6 @@ class WorkflowDefinitionListItem(BaseModel):
     definition: str
 
 class WorkflowRun(BaseModel):
-    workflow_definition_id: UUID
+    workflow_definition_id: UUID 
     input_dir: str
     output_dir: str

@@ -76,7 +76,7 @@ class Workflow:
             workflow_folder,
             input_dir,
             output_dir,
-            self.token.userinfo.get("sub").replace("@", "_"),
+            self.token.userinfo.sub.replace("@", "_"),
             username,
             self.token.value,
         )

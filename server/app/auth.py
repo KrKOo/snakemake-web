@@ -1,6 +1,7 @@
 from typing import TypedDict, override
 import jwt
 import requests
+from pydantic import BaseModel
 
 from .workflow_definition import WorkflowDefinitionMetadata
 
@@ -84,10 +85,10 @@ class AuthClient:
             raise Exception("Failed to get JWKS URL from the token info endpoint")
 
 
-class UserInfo(TypedDict):
+class UserInfo(BaseModel):
     sub: str
-    ga4gh_passport_v1: list[str]
-    eduperson_entitlement: list[str]
+    ga4gh_passport_v1: list[str] = []
+    eduperson_entitlement: list[str] = []
 
 
 class TokenInfo(TypedDict):
@@ -162,7 +163,7 @@ class AccessToken:
         if response.status_code != 200:
             raise Exception("Failed to get user info: " + response.text)
 
-        data: UserInfo = response.json()
+        data = UserInfo.model_validate(response.json())
 
         return data
 
@@ -184,11 +185,8 @@ class AccessToken:
     def get_visas(self) -> list[Visa]:
         user_info = self.get_userinfo()
 
-        if "ga4gh_passport_v1" not in user_info:
-            return []
-
         visas: list[Visa] = []
-        for visa in user_info["ga4gh_passport_v1"]:
+        for visa in user_info.ga4gh_passport_v1:
             v = Visa(token=visa)
             visas.append(v)
 
@@ -197,10 +195,7 @@ class AccessToken:
     def get_entitlements(self) -> list[str]:
         user_info = self.get_userinfo()
 
-        if "eduperson_entitlement" not in user_info:
-            return []
-
-        return user_info["eduperson_entitlement"]
+        return user_info.eduperson_entitlement
 
     def has_visa(self, type: str, value: str) -> bool:
         visas = self.get_visas()
