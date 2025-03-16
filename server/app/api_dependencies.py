@@ -1,8 +1,10 @@
 from fastapi import HTTPException, Request
+from pymongo import MongoClient
 
 from .auth import AccessToken, AuthClient
 from .config import config
-
+from .repository import WorkflowRepository, JobRepository
+from .db import MongoDatabase
 
 async def get_authenticated_user(request: Request) -> str:
     username = request.headers.get("X-Forwarded-Preferred-Username")
@@ -31,3 +33,9 @@ async def get_valid_access_token(request: Request) -> AccessToken:
     if token.is_expired() or not token.is_valid():
         raise HTTPException(status_code=401, detail="Invalid access token")
     return token
+
+def get_workflow_repository():
+    mongo_client = MongoClient(config.mongo.mongodb_uri, uuidRepresentation="standard")
+    mongo_db = MongoDatabase(mongo_client[config.mongo.db_name])
+    job_repository = JobRepository(config.snakemake.tes_url)
+    return WorkflowRepository(mongo_db, job_repository)

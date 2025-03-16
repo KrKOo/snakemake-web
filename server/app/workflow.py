@@ -2,15 +2,14 @@ from functools import wraps
 import os
 import time
 import uuid
-import requests
 from pathlib import Path
 from celery.contrib.abortable import AbortableAsyncResult
 
 from .auth import AccessToken
-from .models import Workflow as WorkflowModel
+from .db.models import WorkflowModel
 from .tasks import run_workflow
 from .workflow_definition.manager import get_workflow_definition_by_id
-from .schemas import WorkflowDetail, Job
+from .repository import WorkflowRepository
 
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
@@ -23,11 +22,13 @@ class WorkflowMultipleRuns(Exception):
 class Workflow:
     def __init__(
         self,
+        workflow_repository: WorkflowRepository,
         log_dir: str,
         tes_url: str,
         token: AccessToken,
-        id: str | None = None,
+        id: uuid.UUID | None = None,
     ):
+        self.workflow_repository = workflow_repository
         self.id = id
         self.log_dir = log_dir
         self.tes_url = tes_url
@@ -57,7 +58,7 @@ class Workflow:
         if self.was_run:
             raise WorkflowMultipleRuns
 
-        self.id = str(uuid.uuid4())
+        self.id = uuid.uuid4()
         self.was_run = True
 
         log_file_path = Path(
@@ -71,7 +72,7 @@ class Workflow:
 
         task_state = run_workflow.delay(
             workflow_config,
-            self.id,
+            str(self.id),
             log_file_path.as_posix(),
             workflow_folder,
             input_dir,
@@ -87,7 +88,7 @@ class Workflow:
             created_by=username,
         )
 
-        workflow.save()
+        self.workflow_repository.save(workflow)
 
         return self.id
 
@@ -95,81 +96,19 @@ class Workflow:
         if not self.id:
             return False
 
-        return WorkflowModel.objects.get(id=self.id) is not None
+        return self.workflow_repository.get_list_item(self.id) is not None
 
     @ensure_was_run
     def cancel(self):
-        workflow_object = WorkflowModel.objects.get(id=self.id)
-        result = AbortableAsyncResult(workflow_object.task_id)
+        task_id = self.workflow_repository.get_task_id(self.id)
+        result = AbortableAsyncResult(task_id)
         result.abort()
 
     @ensure_was_run
     def is_owned_by_user(self, username):
-        workflow_object = WorkflowModel.objects.get(id=self.id)
-        return workflow_object.created_by == username
+        workflow_owner = self.workflow_repository.get_owner(self.id)
+        return workflow_owner == username
 
     @ensure_was_run
     def get_detail(self):
-        workflow_object = WorkflowModel.objects.get(id=self.id)
-
-        # workflow_detail = {
-        #     "id": workflow_object.id,
-        #     "created_at": workflow_object.created_at.timestamp() * 1000,
-        #     "state": workflow_object.state.value,
-        #     "jobs": self.get_jobs_info(),
-        # }
-
-        return WorkflowDetail(
-            id=workflow_object.id,
-            created_at=workflow_object.created_at,
-            state=workflow_object.state,
-            # workflow_definition_id=workflow_object.workflow_definition_id,
-            # input_dir=workflow_object.input_dir,
-            # output_dir=workflow_object.output_dir,
-            jobs=self.get_jobs_info(),
-        )
-
-    @ensure_was_run
-    def get_jobs_info(self, list_view=False) -> list[Job]:
-        job_ids = self.get_jobs()
-        jobs_info: list[Job] = []
-        for job_id in job_ids:
-            job_info = self._get_job_info(job_id, list_view)
-            if job_info:
-                jobs_info.append(job_info)
-
-        return jobs_info
-
-    @ensure_was_run
-    def get_jobs(self) -> list[str]:
-        workflow = WorkflowModel.objects(id=self.id).only("job_ids").first()
-
-        if not workflow:
-            return []
-        return workflow.job_ids
-
-    def _get_job_info(self, job_id, list_view=False) -> Job | None:
-        request_url = f"{self.tes_url}/v1/tasks/{job_id}"
-        if not list_view:
-            request_url += "?view=FULL"
-
-        response = requests.get(request_url, headers={"Authorization": f"Bearer {self.token.value}"})
-
-        if response.status_code == 200:
-            data = response.json()
-
-            if list_view:
-                return data
-
-            job_info = {}
-            job_info["id"] = data["id"]
-            job_info["created_at"] = data["creation_time"]
-            job_info["state"] = data["state"]
-            try:
-                job_info["logs"] = data["logs"][0]["logs"][0]["stdout"]
-            except KeyError:
-                job_info["logs"] = ""
-
-            return Job(**job_info)
-        else:
-            return None
+        return self.workflow_repository.get_detail(self.id, self.token)

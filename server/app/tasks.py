@@ -4,14 +4,16 @@ import re
 import select
 import shutil
 import signal
+import uuid
 from subprocess import PIPE, STDOUT, CalledProcessError, CompletedProcess, Popen
 
 from celery import shared_task
 from celery.contrib.abortable import AbortableTask
 
-from .models import Workflow, WorkflowState
+from .common import WorkflowState
 from .utils import pull_workflow_definitions
 from .workflow_config import WorkflowConfig
+from .api_dependencies import get_workflow_repository
 
 
 def stream_command(
@@ -54,7 +56,7 @@ def stream_command(
     return CompletedProcess(process.args, retcode)
 
 
-def log_handler(log_file_path, line, workflow_id):
+def log_handler(workflow_repository, log_file_path, line, workflow_id):
     with open(log_file_path, "a") as f:
         f.write(line + "\n")
 
@@ -81,7 +83,11 @@ def log_handler(log_file_path, line, workflow_id):
     else:
         return
 
-    workflow = Workflow.objects.get(id=workflow_id)
+    
+    workflow = workflow_repository.get(uuid.UUID(workflow_id))
+    if not workflow:
+        return
+
     if finished_jobs:
         workflow.finished_jobs = finished_jobs
     if total_jobs:
@@ -91,7 +97,7 @@ def log_handler(log_file_path, line, workflow_id):
     if job_id:
         workflow.job_ids.append(job_id)
 
-    workflow.save()
+    workflow_repository.update(workflow)
 
 @shared_task(base=AbortableTask, bind=True)
 def run_workflow(
@@ -106,6 +112,8 @@ def run_workflow(
     username: str,
     token: str,
 ):
+    workflow_repository = get_workflow_repository()
+
     pull_workflow_definitions(
         workflow_config["workflow_definition_dir"],
         workflow_config["workflow_definition_repo"],
@@ -134,9 +142,11 @@ def run_workflow(
         )
 
     def on_abort(process):
-        workflow = Workflow.objects.get(id=workflow_id)
+        workflow = workflow_repository.get(uuid.UUID(workflow_id))
+        if not workflow:
+            return
         workflow.state = WorkflowState.CANCELED
-        workflow.save()
+        workflow_repository.update(workflow)
 
     res = stream_command(
         [
@@ -186,7 +196,7 @@ def run_workflow(
             "OIDC_URL": workflow_config.get("oidc_url"),
             "AUDIENCE": workflow_config.get("oidc_audience"),
         },
-        stdout_handler=lambda line: log_handler(log_file_path, line, workflow_id),
+        stdout_handler=lambda line: log_handler(workflow_repository, log_file_path, line, workflow_id),
         abort_condition=self.is_aborted,
         on_abort=on_abort,
     )
@@ -194,8 +204,10 @@ def run_workflow(
     shutil.rmtree(current_workflow_dir)
 
     if res.returncode != 0 and not self.is_aborted():
-        workflow = Workflow.objects.get(id=workflow_id)
+        workflow = workflow_repository.get(uuid.UUID(workflow_id))
+        if not workflow:
+            return
         workflow.state = WorkflowState.FAILED
-        workflow.save()
+        workflow_repository.update(workflow)
 
     return res.returncode

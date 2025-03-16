@@ -1,4 +1,5 @@
 import pytest
+from uuid import uuid4
 
 from app import create_app
 from app.workflow_definition import Entitlement, WorkflowDefinitionMetadata
@@ -31,17 +32,15 @@ def entitlements() -> list[Entitlement]:
 
 @pytest.fixture
 def workflow_definition(app, entitlements):
-    with app.app_context():
-        return WorkflowDefinitionMetadata(
-            "dir", "id", "name", allowed_entitlements=entitlements
-        )
+    return WorkflowDefinitionMetadata(
+        dir="dir", id=uuid4(), name="name", allowed_entitlements=entitlements
+    )
 
 
 def test_get_allowed_entitlement_patterns(app, workflow_definition, entitlements):
-    with app.app_context():
-        expected = [
-            r"^urn:geant:lifescience-ri\.eu:(.*:entitled:.*|.*:students:.*).*$",
-            r"^urn:swamid:.*(members:organization:EGI):#swamid.se$",
-        ]
+    expected = [
+        r"^urn:geant:lifescience-ri\.eu:(.*:entitled:.*|.*:students:.*).*$",
+        r"^urn:swamid:.*(members:organization:EGI):#swamid.se$",
+    ]
 
-        assert workflow_definition.allowed_entitlement_patterns == expected
+    assert workflow_definition.allowed_entitlement_patterns == expected

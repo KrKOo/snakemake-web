@@ -37,6 +37,7 @@ class CeleryConfig(BaseModel):
 
 class MongoConfig(BaseModel):
     mongodb_uri: str
+    db_name: str
 
 
 class Config(BaseSettings):

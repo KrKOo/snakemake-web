@@ -4,7 +4,6 @@ from celery import Celery
 from fastapi import FastAPI
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
-from mongoengine import connect as mongo_connect
 
 from .config import config
 from .routes import api_router
@@ -32,8 +31,6 @@ def init_celery_app() -> Celery:
 
 def entrypoint(mode="app"):
     app = FastAPI()
-
-    mongo_connect(host=config.mongo.mongodb_uri, uuidRepresentation="standard")
 
     register_routes(app)
 
