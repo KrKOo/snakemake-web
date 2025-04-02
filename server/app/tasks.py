@@ -115,17 +115,17 @@ def run_workflow(
     workflow_repository = get_workflow_repository()
 
     pull_workflow_definitions(
-        workflow_config["workflow_definition_dir"],
-        workflow_config["workflow_definition_repo"],
-        workflow_config["workflow_definition_branch"],
+        workflow_config.workflow_definition_dir,
+        workflow_config.workflow_definition_repo,
+        workflow_config.workflow_definition_branch
     )
 
     current_workflow_dir = os.path.join(
-        workflow_config["workflow_dir"], workflow_id
+        workflow_config.workflow_dir, workflow_id
     )
 
     shutil.copytree(
-        os.path.join(workflow_config["workflow_definition_dir"], workflow_folder),
+        os.path.join(workflow_config.workflow_definition_dir, workflow_folder),
         current_workflow_dir,
     )
 
@@ -156,14 +156,14 @@ def run_workflow(
             "--conda-frontend=conda",
             "--executor=auth-tes",
             "--default-storage-provider=s3",
-            f"--default-storage-prefix={workflow_config.get('default_storage_prefix')}",
-            f"--storage-s3-endpoint-url={workflow_config.get('storage_s3_endpoint_url')}",
-            f"--storage-s3-access-key={workflow_config.get('storage_s3_access_key')}",
-            f"--storage-s3-secret-key={workflow_config.get('storage_s3_secret_key')}",
-            f"--auth-tes-url={workflow_config.get('auth_tes_url')}",
+            f"--default-storage-prefix={workflow_config.default_storage_prefix}",
+            f"--storage-s3-endpoint-url={workflow_config.storage_s3_endpoint_url}",
+            f"--storage-s3-access-key={workflow_config.storage_s3_access_key}",
+            f"--storage-s3-secret-key={workflow_config.storage_s3_secret_key}",
+            f"--auth-tes-url={workflow_config.auth_tes_url}",
             "--auth-tes-oidc-auth=true",
-            f"--container-image={workflow_config.get('container_image')}",
-            f"--jobs={workflow_config.get('jobs')}",
+            f"--container-image={workflow_config.container_image}",
+            f"--jobs={workflow_config.jobs}",
             "--envvars",
             "ACCESS_TOKEN",
             "RESULT_BUCKET",
@@ -188,13 +188,13 @@ def run_workflow(
             "INPUT_DIR": input_dir,
             "OUTPUT_DIR": output_dir,
             "USER_ID": username.replace("@", "_"),
-            "INBOX_HOST": workflow_config.get("inbox_host"),
-            "DOWNLOAD_HOST": workflow_config.get("download_host"),
-            "TMP_DIR": workflow_config.get("tmp_dir"),
-            "CLIENT_ID": workflow_config.get("oidc_client_id"),
-            "CLIENT_SECRET": workflow_config.get("oidc_client_secret"),
-            "OIDC_URL": workflow_config.get("oidc_url"),
-            "AUDIENCE": workflow_config.get("oidc_audience"),
+            "INBOX_HOST": workflow_config.inbox_host,
+            "DOWNLOAD_HOST": workflow_config.download_host,
+            "TMP_DIR": workflow_config.tmp_dir,
+            "CLIENT_ID": workflow_config.oidc_client_id,
+            "CLIENT_SECRET": workflow_config.oidc_client_secret,
+            "OIDC_URL": workflow_config.oidc_url,
+            "AUDIENCE": workflow_config.oidc_audience,
         },
         stdout_handler=lambda line: log_handler(workflow_repository, log_file_path, line, workflow_id),
         abort_condition=self.is_aborted,

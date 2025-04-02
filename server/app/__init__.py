@@ -23,6 +23,11 @@ def init_celery_app() -> Celery:
         dict(
             broker_url=config.celery.broker_url,
             result_backend=config.celery.result_backend,
+            task_serializer = "pickle",
+            result_serializer = "pickle",
+            event_serializer = "json",
+            accept_content = ["application/json", "application/x-python-serialize"],
+            result_accept_content = ["application/json", "application/x-python-serialize"]
         )
     )
     celery_app.set_default()
