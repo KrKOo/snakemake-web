@@ -4,6 +4,7 @@ import re
 import select
 import shutil
 import signal
+from typing import Dict, Optional
 import uuid
 from subprocess import PIPE, STDOUT, CalledProcessError, CompletedProcess, Popen
 
@@ -111,6 +112,7 @@ def run_workflow(
     result_bucket: str,
     username: str,
     token: str,
+    input_mapping: Optional[Dict[str, str]] = None,
 ):
     workflow_repository = get_workflow_repository()
 
@@ -148,37 +150,45 @@ def run_workflow(
         workflow.state = WorkflowState.CANCELED
         workflow_repository.update(workflow)
 
+    command_args = [
+        "snakemake",
+        "--sdm=conda",
+        "--use-conda",
+        "--conda-frontend=conda",
+        "--executor=auth-tes",
+        "--default-storage-provider=s3",
+        f"--default-storage-prefix={workflow_config.default_storage_prefix}",
+        f"--storage-s3-endpoint-url={workflow_config.storage_s3_endpoint_url}",
+        f"--storage-s3-access-key={workflow_config.storage_s3_access_key}",
+        f"--storage-s3-secret-key={workflow_config.storage_s3_secret_key}",
+        f"--auth-tes-url={workflow_config.auth_tes_url}",
+        "--auth-tes-oidc-auth=true",
+        f"--container-image={workflow_config.container_image}",
+        f"--jobs={workflow_config.jobs}",
+        "--envvars",
+        "ACCESS_TOKEN",
+        "RESULT_BUCKET",
+        "INPUT_DIR",
+        "OUTPUT_DIR",
+        "USER_ID",
+        "INBOX_HOST",
+        "DOWNLOAD_HOST",
+        "WORKFLOW_ID",
+        "TMP_DIR",
+        "CLIENT_ID",
+        "CLIENT_SECRET",
+        "OIDC_URL",
+        "AUDIENCE",
+    ]
+
+    if input_mapping:
+        input_mapping_str = " ".join(
+            f"{k}={v}" for k, v in input_mapping.items()
+        )
+        command_args.extend(["--input-passthrough-mapping", input_mapping_str])
+
     res = stream_command(
-        [
-            "snakemake",
-            "--sdm=conda",
-            "--use-conda",
-            "--conda-frontend=conda",
-            "--executor=auth-tes",
-            "--default-storage-provider=s3",
-            f"--default-storage-prefix={workflow_config.default_storage_prefix}",
-            f"--storage-s3-endpoint-url={workflow_config.storage_s3_endpoint_url}",
-            f"--storage-s3-access-key={workflow_config.storage_s3_access_key}",
-            f"--storage-s3-secret-key={workflow_config.storage_s3_secret_key}",
-            f"--auth-tes-url={workflow_config.auth_tes_url}",
-            "--auth-tes-oidc-auth=true",
-            f"--container-image={workflow_config.container_image}",
-            f"--jobs={workflow_config.jobs}",
-            "--envvars",
-            "ACCESS_TOKEN",
-            "RESULT_BUCKET",
-            "INPUT_DIR",
-            "OUTPUT_DIR",
-            "USER_ID",
-            "INBOX_HOST",
-            "DOWNLOAD_HOST",
-            "WORKFLOW_ID",
-            "TMP_DIR",
-            "CLIENT_ID",
-            "CLIENT_SECRET",
-            "OIDC_URL",
-            "AUDIENCE",
-        ],
+        command_args,
         cwd=current_workflow_dir,
         env={
             **os.environ,

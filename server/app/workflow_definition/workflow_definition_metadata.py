@@ -1,6 +1,6 @@
 import re
 from uuid import UUID
-from typing import TypedDict
+from typing import Dict, Optional, TypedDict
 from pydantic import BaseModel
 
 
@@ -14,7 +14,8 @@ class WorkflowDefinitionMetadata(BaseModel):
     dir: str
     id: UUID
     name: str
-    allowed_entitlements: list[Entitlement] | None = None
+    allowed_entitlements: Optional[list[Entitlement]] = None
+    input_mapping: Optional[Dict[str, str]] = None
 
     @property
     def allowed_entitlement_patterns(self) -> list[str]:
@@ -38,3 +39,13 @@ class WorkflowDefinitionMetadata(BaseModel):
                 return True
 
         return False
+    
+    def get_input_mapping(self, params: Dict[str, str]) -> Dict[str, str]:
+        if not self.input_mapping:
+            return {}
+        
+        input_mapping = {}
+        for key, value in self.input_mapping.items():
+            input_mapping[key] = value.format(**params)
+        
+        return input_mapping

@@ -68,18 +68,19 @@ class Workflow:
         )
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-        workflow_folder = get_workflow_definition_by_id(workflow_definition_id).dir
+        workflow_definition_metadata = get_workflow_definition_by_id(workflow_definition_id)
 
         task_state = run_workflow.delay(
-            workflow_config,
-            str(self.id),
-            log_file_path.as_posix(),
-            workflow_folder,
-            input_dir,
-            output_dir,
-            self.token.userinfo.sub.replace("@", "_"),
-            username,
-            self.token.value,
+            workflow_config=workflow_config,
+            workflow_id=str(self.id),
+            log_file_path=log_file_path.as_posix(),
+            workflow_folder=workflow_definition_metadata.dir,
+            input_dir=input_dir,
+            output_dir=output_dir,
+            result_bucket=self.token.userinfo.sub.replace("@", "_"),
+            username=username,
+            token=self.token.value,
+            input_mapping=workflow_definition_metadata.get_input_mapping({"dataset": input_dir}),
         )
 
         workflow = WorkflowModel(

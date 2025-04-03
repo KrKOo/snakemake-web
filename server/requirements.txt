@@ -1,6 +1,6 @@
 snakemake-storage-plugin-s3==0.2.10
 uvicorn==0.28.0
-snakemake==8.9.0
+# snakemake==8.9.0
 celery==5.3.6
 redis==5.0.6
 GitPython==3.1.42
@@ -12,6 +12,7 @@ pydantic==2.8.2
 pydantic-settings==2.8.1
 fastapi==0.115.11
 pymongo==4.6.2
+git+https://github.com/KrKOo/snakemake.git@passthrough-mapping
 git+https://github.com/KrKOo/snakemake-auth-plugins.git@main#egg=oidc-auth-plugin&subdirectory=oidc-auth-plugin
 git+https://github.com/KrKOo/snakemake-auth-plugins.git@main#egg=snakemake-executor-plugin-auth-tes&subdirectory=snakemake-executor-plugin-auth-tes
 git+https://github.com/KrKOo/snakemake-auth-plugins.git@main#egg=snakemake-storage-plugin-http&subdirectory=snakemake-storage-plugin-http
