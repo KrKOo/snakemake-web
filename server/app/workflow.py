@@ -101,6 +101,7 @@ class Workflow:
 
     @ensure_was_run
     def cancel(self):
+        self.workflow_repository.cancel(self.id)
         task_id = self.workflow_repository.get_task_id(self.id)
         result = AbortableAsyncResult(task_id)
         result.abort()

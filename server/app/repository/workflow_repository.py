@@ -1,4 +1,5 @@
 from uuid import UUID
+from app.common import WorkflowState
 from app.schemas import WorkflowListItem, WorkflowDetail
 from app.db.models import WorkflowModel
 from app.db import BaseDatabase
@@ -70,6 +71,14 @@ class WorkflowRepository:
             res.append(workflow_res)
         
         return res
+
+    def cancel(self, workflow_id: UUID):
+        workflow = self.get(workflow_id)
+        if workflow is None:
+            return
+        
+        workflow.state = WorkflowState.CANCELED
+        self.db.update_one(WorkflowModel, {"id": workflow_id}, workflow)
     
     def get(self, workflow_id: UUID) -> WorkflowModel | None:
         return self.db.get_one(WorkflowModel, {"id": workflow_id})

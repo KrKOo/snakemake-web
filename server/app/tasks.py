@@ -143,13 +143,6 @@ def run_workflow(
             )
         )
 
-    def on_abort(process):
-        workflow = workflow_repository.get(uuid.UUID(workflow_id))
-        if not workflow:
-            return
-        workflow.state = WorkflowState.CANCELED
-        workflow_repository.update(workflow)
-
     command_args = [
         "snakemake",
         "--sdm=conda",
@@ -208,7 +201,6 @@ def run_workflow(
         },
         stdout_handler=lambda line: log_handler(workflow_repository, log_file_path, line, workflow_id),
         abort_condition=self.is_aborted,
-        on_abort=on_abort,
     )
 
     shutil.rmtree(current_workflow_dir)
