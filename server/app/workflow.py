@@ -10,6 +10,8 @@ from .db.models import WorkflowModel
 from .tasks import run_workflow
 from .workflow_definition.manager import get_workflow_definition_by_id
 from .repository import WorkflowRepository
+from .config import config
+from .workflow_config import WorkflowConfig
 
 class WorkflowWasNotRun(Exception):
     """Raised when trying to access a workflow that was not run yet"""
@@ -49,11 +51,11 @@ class Workflow:
 
     def run(
         self,
-        workflow_config,
-        workflow_definition_id,
-        input_dir,
-        output_dir,
-        username,
+        workflow_config: WorkflowConfig,
+        workflow_definition_id: uuid.UUID,
+        input_dir: str,
+        output_dir: str,
+        username: str,
     ):
         if self.was_run:
             raise WorkflowMultipleRuns
@@ -69,7 +71,12 @@ class Workflow:
         log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
         workflow_definition_metadata = get_workflow_definition_by_id(workflow_definition_id)
-
+        
+        for tes_datasets in config.tes_data:
+            if input_dir in tes_datasets.datasets:
+                workflow_config.auth_tes_url = tes_datasets.tes_url
+                break
+        
         task_state = run_workflow.delay(
             workflow_config=workflow_config,
             workflow_id=str(self.id),
@@ -84,7 +91,7 @@ class Workflow:
         )
 
         workflow = WorkflowModel(
-            id=self.id,
+            _id=self.id,
             task_id=task_state.id,
             created_by=username,
         )

@@ -39,6 +39,10 @@ class MongoConfig(BaseModel):
     mongodb_uri: str
     db_name: str
 
+class TESDatasets(BaseModel):
+    tes_url: str
+    datasets: list[str]
+
 
 class Config(BaseSettings):
     model_config = SettingsConfigDict(yaml_file=os.environ.get("CONFIG_FILE", "../config.yaml"))
@@ -47,6 +51,7 @@ class Config(BaseSettings):
     snakemake: SnakemakeConfig
     celery: CeleryConfig
     mongo: MongoConfig
+    tes_data: list[TESDatasets]
 
     @classmethod
     def settings_customise_sources(

@@ -65,5 +65,9 @@ class JobRepository:
         if response.status_code != 200:
             return None
 
-        job_model = JobModel.model_validate_json(response.text)
+        try:
+            job_model = JobModel.model_validate_json(response.text)
+        except:
+            job_model = None
+
         return job_model

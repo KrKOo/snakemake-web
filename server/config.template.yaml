@@ -24,3 +24,7 @@ celery:
   result_backend: redis://redis-service:6379/0
 mongo:
   mongodb_uri: mongodb://user:password@localhost/snakemake-web
+
+tes_data:
+  - tes_url: 
+    datasets: []
