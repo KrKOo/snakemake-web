@@ -7,14 +7,14 @@ class Executor(BaseModel):
     env: Dict[str, str]
     ignore_error: bool
     image: str
-    stderr: str
+    stderr: Optional[str] = None
     stdin: str
-    stdout: str
+    stdout: Optional[str] = None
     workdir: str
 
 
 class InputFile(BaseModel):
-    content: str
+    content: Optional[str] = None
     description: str
     name: str
     path: str
@@ -26,13 +26,13 @@ class InputFile(BaseModel):
 class LogEntry(BaseModel):
     end_time: str
     exit_code: int
-    start_time: datetime
+    start_time: Optional[datetime] = None
     stderr: str
     stdout: str
 
 
 class Metadata(BaseModel):
-    hostname: str
+    hostname: Optional[str] = None
 
 
 class LogBlock(BaseModel):
@@ -41,7 +41,7 @@ class LogBlock(BaseModel):
     metadata: Metadata
     outputs: List[str]
     start_time: datetime
-    system_logs: List[str]
+    system_logs: Optional[List[str]] = None
 
 
 class JobModel(BaseModel):

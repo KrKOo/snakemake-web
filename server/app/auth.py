@@ -1,27 +1,9 @@
-from typing import TypedDict, override
+from typing import override
 import jwt
 import requests
-from pydantic import BaseModel
 
-from .workflow_definition import WorkflowDefinitionMetadata
-
-
-class VisaPayload(TypedDict):
-    type: str
-    value: str
-    asserted: int
-    source: str
-    by: str
-
-
-class VisaJWTPayload(TypedDict):
-    iss: str
-    sub: str
-    aud: str
-    exp: int
-    iat: int
-    jti: str
-    ga4gh_visa_v1: VisaPayload
+from app.common.models import VisaJWTPayload, OIDCConfig, UserInfo, TokenInfo, TokenJWTPayload
+from app.workflow_definition import WorkflowDefinitionMetadata
 
 
 class Visa:
@@ -36,30 +18,21 @@ class Visa:
         self._parse_visa()
 
     def _parse_visa(self) -> None:
-        decoded: VisaJWTPayload = jwt.decode(
+        decoded_jwt = jwt.decode(
             self.token, options={"verify_signature": False}
         )
-        data = decoded["ga4gh_visa_v1"]
+        visa_jwt = VisaJWTPayload.model_validate(decoded_jwt)
+        visa_payload = visa_jwt.ga4gh_visa_v1
 
-        # TODO: Check if the visa is expired
-        self.type = data["type"]
-        self.value = data["value"]
-        self.asserted = int(data["asserted"]) if data["asserted"] else None
-        self.source = data["source"]
-        self.issued_by = data["by"]
+        self.type = visa_payload.type
+        self.value = visa_payload.value
+        self.asserted = int(visa_payload.asserted) if visa_payload.asserted else None
+        self.source = visa_payload.source
+        self.issued_by = visa_payload.by
 
     @override
     def __repr__(self):
         return f"Visa(type={self.type}, value={self.value}, expires={self.expires}, asserted={self.asserted}, source={self.source}, issued_by={self.issued_by})"
-
-
-class OIDCConfig(TypedDict):
-    issuer: str
-    authorization_endpoint: str
-    token_endpoint: str
-    userinfo_endpoint: str
-    jwks_uri: str
-    introspection_endpoint: str
 
 
 class AuthClient:
@@ -77,35 +50,12 @@ class AuthClient:
     def _get_urls(self) -> None:
         try:
             response = requests.get(self.oidc_config_url)
-            data: OIDCConfig = response.json()
-            self.jwks_url = data["jwks_uri"]
-            self.introspection_url = data["introspection_endpoint"]
-            self.userinfo_url = data["userinfo_endpoint"]
+            oidc_config = OIDCConfig.model_validate(response.json())
+            self.jwks_url = oidc_config.jwks_uri
+            self.introspection_url = oidc_config.introspection_endpoint
+            self.userinfo_url = oidc_config.userinfo_endpoint
         except KeyError:
             raise Exception("Failed to get JWKS URL from the token info endpoint")
-
-
-class UserInfo(BaseModel):
-    sub: str
-    ga4gh_passport_v1: list[str] = []
-    eduperson_entitlement: list[str] = []
-
-
-class TokenInfo(TypedDict):
-    active: bool
-
-
-class TokenJWTPayload(TypedDict):
-    sub: str
-    iss: str
-    aud: str
-    exp: int
-    iat: int
-    jti: str
-    acr: str
-    scope: str
-    auth_time: str
-    client_id: str
 
 
 class AccessToken:
@@ -127,12 +77,12 @@ class AccessToken:
         return self._user_info
 
     def is_expired(self, time_offset: int = 0) -> bool:
-        data = self.get_data()
+        token_jwt = self.get_data()
 
-        if not data:
+        if not token_jwt:
             return True
 
-        if data["exp"] - time_offset < 0:
+        if token_jwt.exp - time_offset < 0:
             return True
 
         return False
@@ -147,9 +97,9 @@ class AccessToken:
         if response.status_code != 200:
             raise Exception("Failed to validate the access token: " + response.text)
 
-        token_info: TokenInfo = response.json()
+        token_info = TokenInfo.model_validate(response.json())
 
-        if token_info["active"]:
+        if token_info.active:
             return True
 
         return False
@@ -174,13 +124,15 @@ class AccessToken:
         key = jwks_client.get_signing_key(header["kid"]).key
 
         try:
-            data: TokenJWTPayload = jwt.decode(
+            decoded_jwt = jwt.decode(
                 self.value, key, [header["alg"]], options={"verify_aud": False}
             )
+
+            token_jwt = TokenJWTPayload.model_validate(decoded_jwt)
         except jwt.ExpiredSignatureError:
             return None
 
-        return data
+        return token_jwt
 
     def get_visas(self) -> list[Visa]:
         user_info = self.get_userinfo()

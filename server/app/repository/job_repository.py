@@ -1,5 +1,5 @@
 import requests
-from app.common import JobModel
+from app.common.models import JobModel
 from app.schemas import JobDetail, JobListItem
 from app.auth import AccessToken
 
