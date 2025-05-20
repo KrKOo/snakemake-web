@@ -117,7 +117,9 @@ The runner uses the `input_mapping` property to support generic workflow definit
 
 
 4. **Task Dispatch and Execution**
-Upon successful validation, the runner submits an asynchronous Celery task to execute the workflow. The Celery worker launches Snakemake with all necessary arguments and credentials and monitors the output logs of the Snakemake process.
+Upon successful validation, the runner submits an asynchronous Celery task to execute the workflow on one of the configured TES nodes. Currently the dataset->TES mapping has to be defined in the workflow runner configuration, since there is no way to discover data stored in each nodes SDA.
+
+The Celery worker launches Snakemake with all necessary arguments and credentials and monitors the output logs of the Snakemake process. 
 
 
 ## License
